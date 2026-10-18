@@ -1,6 +1,6 @@
 # Tangram Updates
 
-Repositorio público de fuentes y distribución [Tangram-Space/updates](https://github.com/Tangram-Space/updates), compartido por aplicación. AirPlay es la primera incorporación: **1.3.2, build 6**, para macOS 11 o posterior en Intel. La clave de firma está provisionada y los workflows manuales están activos. La compilación de CI, la primera release firmada y la validación del canal de actualizaciones están pendientes.
+Repositorio público de fuentes y distribución [Tangram-Space/updates](https://github.com/Tangram-Space/updates), compartido por aplicación. AirPlay es la primera incorporación: **1.3.2, build 6**, para macOS 11 o posterior en Intel. La [primera release firmada](https://github.com/Tangram-Space/updates/releases/tag/airplay-v1.3.2-b6) y sus fuentes están publicadas. La [compilación nativa corregida](https://github.com/Tangram-Space/updates/actions/runs/39171983875) pasó las verificaciones del bundle, Preferencias y firmas. La comprobación anónima del canal y la prueba de instalación de Sparkle están en curso.
 
 ## Contenido
 
@@ -9,10 +9,10 @@ Repositorio público de fuentes y distribución [Tangram-Space/updates](https://
 | [apps/airplay/source/](apps/airplay/source/) | Los 69 archivos del proyecto preparado: modificaciones de UxPlay, recursos, construcción, verificadores, manifiestos y licencias. La selección de dependencias se aísla de Homebrew para mantener coherentes las cabeceras y bibliotecas del SDK. |
 | [apps/airplay/source-snapshot.json](apps/airplay/source-snapshot.json) | Identidad y comprobación del snapshot, sin importar el historial privado de desarrollo. |
 | [ci/airplay/](ci/airplay/) | Dependencias fijadas, configuración pública, firma y recolección acotada de artefactos. |
-| `.github/workflows/*.yml` | Dos workflows **manuales** activos después de provisionar la firma; no publican Releases ni modifican el feed. |
-| [apps/airplay/channel.json](apps/airplay/channel.json) | Estado del canal; los valores pendientes deben completarse con resultados reales. |
+| `.github/workflows/*.yml` | Tres workflows **manuales**: configuración pública, compilación firmada y prueba real de instalación con Sparkle. No publican Releases ni modifican el feed. |
+| [apps/airplay/channel.json](apps/airplay/channel.json) | Identidad de la release publicada, clave pública y estado comprobado del canal. |
 
-## Preparar y publicar la primera versión
+## Preparar y publicar versiones
 
 1. **Publicar las fuentes revisadas** en `main` del repositorio público `Tangram-Space/updates`. Las plantillas rechazan otro repositorio, una rama distinta o un destino privado. La construcción usa un runner Intel y no modifica la app instalada en ningún Mac personal.
 
@@ -24,13 +24,13 @@ Repositorio público de fuentes y distribución [Tangram-Space/updates](https://
 
 5. **Publicar los archivos finales:** primero `release/AirPlay-1.3.2-6.zip` en la release de tag `airplay-v1.3.2-b6`, junto con las fuentes correspondientes; después, los bytes exactos de `release/appcast.xml` en `feeds/airplay/stable/appcast.xml`. No editar el XML firmado ni sustituir el ZIP por el paquete previo a la firma.
 
-La dirección prevista del feed es:
+La dirección estable del feed es:
 
 ```text
 https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stable/appcast.xml
 ```
 
-Antes de entregar la instalación inicial, ejecutar `apps/airplay/source/scripts/verify-published-release.py --release-dir <carpeta-release>` para comprobar descargas anónimas e integridad. La ejecución en Big Sur y la transición real a un build superior desde AirPlay siguen pendientes: una compilación de CI y firmas válidas, por sí solas, no prueban esa actualización.
+Antes de entregar la instalación inicial, ejecutar `apps/airplay/source/scripts/verify-published-release.py --release-dir <carpeta-release>` para comprobar descargas anónimas e integridad. El [smoke de Sparkle](ci/airplay/update-smoke/README.md) comprueba la transición desde una aplicación de prueba A a la release B real y su reapertura. Se ejecuta en macOS 15 Intel; no sustituye la comprobación de streaming, interfaz del actualizador o ejecución en el iMac con Big Sur.
 
 ## Licencias
 

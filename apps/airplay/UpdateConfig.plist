@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stable/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>i8eQAeVM6gqQ7M7YeAlnGqSZQ0Wn8321shPPPdafH7A=</string>
+	<key>SparkleKeychainAccount</key>
+	<string>local.chevy.airplay</string>
+</dict>
+</plist>

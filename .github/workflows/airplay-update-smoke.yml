@@ -1,0 +1,102 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Reviewed manual smoke test in the public Tangram-Space/updates repository.
+# This workflow publishes nothing and receives no signing secret.
+name: AirPlay real Sparkle self-update smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published B short version
+        required: true
+        default: '1.3.2'
+        type: string
+      build:
+        description: Published B numeric build
+        required: true
+        default: '6'
+        type: string
+      archive_sha256:
+        description: Reviewed SHA256 of the final published ZIP
+        required: true
+        type: string
+      appcast_sha256:
+        description: Reviewed SHA256 of the exact signed live appcast
+        required: true
+        type: string
+      archive_bytes:
+        description: Exact byte length of the final published ZIP
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: airplay-update-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' &&
+          github.repository == 'Tangram-Space/updates' &&
+          github.ref == 'refs/heads/main' &&
+          github.event.repository.private == false &&
+          github.event.repository.visibility == 'public' &&
+          vars.AIRPLAY_PUBLIC_CI_ENABLED == 'true' }}
+    runs-on: macos-15-intel
+    timeout-minutes: 25
+    env:
+      AIRPLAY_PUBLIC_CI_ENABLED: ${{ vars.AIRPLAY_PUBLIC_CI_ENABLED }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Read the reviewed public smoke helpers
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Create an isolated report directory
+        id: configure
+        run: |
+          set -euo pipefail
+          AP_SMOKE_ROOT="$(/usr/bin/mktemp -d "$RUNNER_TEMP/airplay-smoke-report-XXXXXX")"
+          /bin/mkdir "$AP_SMOKE_ROOT/reports"
+          printf 'AIRPLAY_SMOKE_REPORT_DIR=%s\n' "$AP_SMOKE_ROOT/reports" >> "$GITHUB_ENV"
+
+      - name: Prepare the already reviewed runtime on the ephemeral runner
+        run: |
+          set -euo pipefail
+          # Reuse the exact public dependency helper; this does not build AirPlay.
+          /bin/bash ci/airplay/prepare-macos-dependencies.sh 2>&1 | /usr/bin/tee "$AIRPLAY_SMOKE_REPORT_DIR/dependencies.log"
+
+      - name: Install and relaunch real B through Sparkle from synthetic A
+        env:
+          AP_SMOKE_VERSION: ${{ inputs.version }}
+          AP_SMOKE_BUILD: ${{ inputs.build }}
+          AP_SMOKE_ARCHIVE_SHA256: ${{ inputs.archive_sha256 }}
+          AP_SMOKE_APPCAST_SHA256: ${{ inputs.appcast_sha256 }}
+          AP_SMOKE_ARCHIVE_BYTES: ${{ inputs.archive_bytes }}
+        run: |
+          set -euo pipefail
+          AP_SMOKE_PYTHON="$(/usr/bin/xcrun --find python3)"
+          "$AP_SMOKE_PYTHON" ci/airplay/update-smoke/run-update-smoke.py \
+            --output "$AIRPLAY_SMOKE_REPORT_DIR" \
+            --version "$AP_SMOKE_VERSION" --build "$AP_SMOKE_BUILD" \
+            --archive-sha256 "$AP_SMOKE_ARCHIVE_SHA256" \
+            --appcast-sha256 "$AP_SMOKE_APPCAST_SHA256" \
+            --archive-bytes "$AP_SMOKE_ARCHIVE_BYTES"
+
+      - name: Upload only the dedicated smoke reports
+        if: ${{ always() && steps.configure.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: airplay-update-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.AIRPLAY_SMOKE_REPORT_DIR }}/
+          if-no-files-found: error
+          include-hidden-files: false
+          retention-days: 7
+          compression-level: 6

@@ -14,19 +14,36 @@
     "directory": "source",
     "version": "1.3.2",
     "build": "6",
-    "license": "GPL-3.0-or-later"
+    "license": "GPL-3.0-or-later",
+    "release_commit": "17489f100018760217a57c959bd3dcb9a39675bb"
   },
   "update_channel": {
     "engine": "Sparkle",
     "engine_version": "2.9.6",
-    "status": "awaiting_first_signed_release",
+    "status": "published_awaiting_validation",
     "appcast_path": "feeds/airplay/stable/appcast.xml",
-    "feed_url": null,
-    "public_ed25519_key": null,
-    "latest_release": null
+    "feed_url": "https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stable/appcast.xml",
+    "public_ed25519_key": "i8eQAeVM6gqQ7M7YeAlnGqSZQ0Wn8321shPPPdafH7A=",
+    "latest_release": {
+      "version": "1.3.2",
+      "build": "6",
+      "tag": "airplay-v1.3.2-b6",
+      "url": "https://github.com/Tangram-Space/updates/releases/tag/airplay-v1.3.2-b6",
+      "download_url": "https://github.com/Tangram-Space/updates/releases/download/airplay-v1.3.2-b6/AirPlay-1.3.2-6.zip",
+      "archive_sha256": "493d3e0a62e6c1e7258acf5fae4c89e5552210ef3b4b1d1a65a9c6eb08301c96",
+      "archive_bytes": 3498880,
+      "appcast_sha256": "0b751a82321e7151e00de84abda38048cfe86b0f0d9931f92493f9a2d41eb458",
+      "source_archive": "AirPlay-1.3.2-6-sources.tar.gz",
+      "source_archive_sha256": "4719f91248082a3856de3416694fb9b32c5dbc1cf9320735c3596779332787e1"
+    }
   },
   "verification": {
     "anonymous_availability_verified": false,
-    "macos_update_test_performed": false
+    "macos_update_test_performed": false,
+    "native_build_run_id": 39171983875,
+    "native_build_passed": true,
+    "archive_signature_verified": true,
+    "appcast_signature_verified": true,
+    "big_sur_runtime_tested": false
   }
 }
