@@ -1,0 +1,725 @@
+#!/bin/bash
+# AirPlay.app 1.3.2: volumen compacto y preparacion de actualizaciones.
+# El bundle contiene un ejecutable Mach-O; usa el GStreamer ya instalado.
+# Fuentes y compilacion nuevas en una carpeta aislada. Sin sudo.
+# Sparkle 2.9.6 se reutiliza del archivo verificado o se obtiene de su URL fija.
+set -uo pipefail
+umask 077
+
+UX_MODE="@@DEFAULT_MODE@@"
+UX_UPDATE_CHANNEL_STATE="@@UPDATE_CHANNEL_STATE@@"
+UX_INFO_PLIST_SHA="@@INFO_PLIST_SHA@@"
+UX_ROOT="${AIRPLAY_WORK_ROOT:-$HOME/Library/Caches/AirPlay/Builds.noindex}"
+UX_ORIGINAL_SRC="${AIRPLAY_UPSTREAM_REPO:-}"
+UX_PREFIX="${AIRPLAY_DEPS_PREFIX:-}"
+if [ -z "$UX_PREFIX" ]; then
+  if [ -r "$HOME/Applications/UxPlay-Prueba-1.73.7/dependencias/lib/libplist-2.0.a" ]; then
+    UX_PREFIX="$HOME/Applications/UxPlay-Prueba-1.73.7/dependencias"
+  else
+    UX_PREFIX="/usr/local"
+  fi
+fi
+UX_GST="${AIRPLAY_GSTREAMER_ROOT:-/Library/Frameworks/GStreamer.framework/Versions/1.0}"
+UX_CMAKE="${AIRPLAY_CMAKE:-}"
+if [ "$UX_CMAKE" = "$HOME/Applications/UxPlay-Prueba-1.73.7/herramientas/cmake-3.31.12-macos-universal/CMake.app/Contents/bin/cmake" ] &&
+   [ ! -e "$UX_CMAKE" ] &&
+   [ -x "$HOME/Library/Application Support/AirPlay/BuildTools.noindex/cmake-3.31.12-macos-universal/CMake.app/Contents/bin/cmake" ]; then
+  # Preserve compatibility with the exact old command/config after the tool
+  # distribution is relocated. Other explicit CMake selections are unchanged.
+  UX_CMAKE="$HOME/Library/Application Support/AirPlay/BuildTools.noindex/cmake-3.31.12-macos-universal/CMake.app/Contents/bin/cmake"
+fi
+if [ -z "$UX_CMAKE" ]; then
+  for UX_CMAKE_CANDIDATE in \
+    "$HOME/Library/Application Support/AirPlay/BuildTools.noindex/cmake-3.31.12-macos-universal/CMake.app/Contents/bin/cmake" \
+    "$HOME/Applications/UxPlay-Prueba-1.73.7/herramientas/cmake-3.31.12-macos-universal/CMake.app/Contents/bin/cmake"; do
+    if [ -x "$UX_CMAKE_CANDIDATE" ]; then
+      UX_CMAKE="$UX_CMAKE_CANDIDATE"
+      break
+    fi
+  done
+  [ -n "$UX_CMAKE" ] || UX_CMAKE="$(command -v cmake 2>/dev/null || :)"
+fi
+UX_PKG="$UX_GST/bin/pkg-config"
+UX_COMMIT="df67c212a433cf6dda3676dd40c097900d24e645"
+UX_CONF_SHA="dd7b56beb493a0a04d746f0a1d57d723344efc9f6475d418d73ddbff6ba1b7d8"
+UX_AUDIO_SHA="703ab8eca9eaf9723c9369a68cf21ac00a11c02a79f3a56703ad708588ebc66f"
+UX_BUNDLE_ID="local.chevy.airplay"
+UX_SCRIPT_DIR="$(cd "$(/usr/bin/dirname "$0")" && pwd -P)" || exit 1
+UX_SPARKLE_VERSION="2.9.6"
+UX_SPARKLE_SHA="52bf9e88cdd972fc0c81501377a880e90d47031bd8ca5462488f843e2609e192"
+UX_SPARKLE_URL="https://github.com/sparkle-project/Sparkle/releases/download/2.9.6/Sparkle-2.9.6.tar.xz"
+UX_PHASE="preparacion"
+UX_STATUS=""
+UX_BUILD_LOG=""
+UX_DEST_DIR=""
+UX_DEST_APP=""
+UX_EXISTING_APP=""
+UX_TARGET_WAS_EXISTING=0
+UX_STAGE_PARENT=""
+UX_STAGED_APP=""
+UX_BACKUP=""
+UX_MOVED_OLD=0
+UX_MOVED_NEW=0
+UX_INSTALLED=0
+UX_PREPARED=0
+UX_PACKAGE_ARCHIVE=""
+UX_PACKAGE_SHA=""
+UX_OPENED=0
+UX_POSTINSTALL_CODE=0
+UX_SIGNED_BIN_SHA="no disponible"
+
+ux_fail() {
+  printf '\n[ERROR] %s\n' "$*" >&2
+  if [ -n "$UX_BUILD_LOG" ]; then printf '[ERROR] %s\n' "$*" >> "$UX_BUILD_LOG"; fi
+  if [ -n "$UX_STATUS" ]; then ux_note "ERROR durante $UX_PHASE: $*"; fi
+  exit 1
+}
+ux_hash() { /usr/bin/shasum -a 256 "$1" | /usr/bin/awk '{print $1}'; }
+ux_note() {
+  printf '%s %s\n' "$(/bin/date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*" >> "$UX_STATUS"
+}
+ux_check_file() {
+  [ -r "$1" ] || ux_fail "No se puede leer $3: $1"
+  local UX_ACTUAL
+  UX_ACTUAL="$(ux_hash "$1")" || ux_fail "No se pudo verificar $3."
+  [ "$UX_ACTUAL" = "$2" ] || ux_fail "Cambio $3. Revisa el ZIP de diagnostico de esta instalacion."
+  ux_note "SHA256 verificado ($3): $UX_ACTUAL"
+}
+ux_check_final_sources() {
+@@FINAL_CHECKS@@
+}
+ux_check_localizations() {
+@@RESOURCE_CHECKS@@
+}
+ux_run() {
+  if "$@" 2>&1 | /usr/bin/tee -a "$UX_BUILD_LOG"; then return 0; fi
+  ux_fail "Fallo la etapa de $UX_PHASE. Se guardara el ZIP con el registro."
+}
+ux_plist_get() {
+  /usr/libexec/PlistBuddy -c "Print :$2" "$1/Contents/Info.plist" 2>/dev/null
+}
+ux_is_ours() {
+  [ -d "$1" ] && [ ! -L "$1" ] || return 1
+  [ "$(ux_plist_get "$1" CFBundleIdentifier)" = "$UX_BUNDLE_ID" ] || return 1
+  [ "$(ux_plist_get "$1" CFBundleExecutable)" = uxplay ] || return 1
+  local UX_MARKER_ID UX_MARKER_VERSION
+  UX_MARKER_ID=""
+  UX_MARKER_VERSION=""
+  {
+    IFS= read -r UX_MARKER_ID && IFS= read -r UX_MARKER_VERSION
+  } < "$1/Contents/Resources/installation.txt" 2>/dev/null || return 1
+  [ "$UX_MARKER_ID" = "$UX_BUNDLE_ID" ] && [ "$UX_MARKER_VERSION" = 1 ]
+}
+ux_check_receivers_closed() {
+  local UX_NAME UX_PIDS UX_PID UX_EXECUTABLE UX_ACTIVE
+  UX_ACTIVE=0
+  for UX_NAME in uxplay AirServer; do
+    UX_PIDS="$(/usr/bin/pgrep -x "$UX_NAME" 2>/dev/null)" || UX_PIDS=""
+    [ -n "$UX_PIDS" ] || continue
+    while IFS= read -r UX_PID; do
+      case "$UX_PID" in ''|*[!0-9]*) continue ;; esac
+      UX_EXECUTABLE="$(LC_ALL=C /bin/ps -ww -p "$UX_PID" -o comm= 2>/dev/null |
+        /usr/bin/sed 's/^[[:space:]]*//; s/[[:space:]]*$//')" || UX_EXECUTABLE=""
+      # El proceso pudo terminar entre pgrep y ps. No volcar otros procesos.
+      if [ -z "$UX_EXECUTABLE" ]; then
+        UX_EXECUTABLE="ruta no disponible durante el chequeo"
+      else
+        case "$UX_EXECUTABLE" in "$UX_NAME"|*/"$UX_NAME") : ;; *) continue ;; esac
+      fi
+      UX_ACTIVE=1
+      ux_note "Receptor activo ($UX_NAME): PID $UX_PID; ejecutable $UX_EXECUTABLE"
+      printf '%s\t%s\t%s\t%s\n' "$UX_PHASE" "$UX_NAME" "$UX_PID" "$UX_EXECUTABLE" >> "$UX_RUN/receptores-activos.txt"
+    done <<< "$UX_PIDS"
+  done
+  if [ "$UX_ACTIVE" -eq 1 ]; then
+    ux_fail "Hay un receptor abierto. Cerra AirPlay o AirServer desde su menu, o detene la prueba en Terminal con Control+C, y ejecuta este instalador otra vez. El ZIP incluye el PID y la ruta del receptor detectado."
+  fi
+}
+ux_select_user_destination() {
+  /bin/mkdir -p "$HOME/Applications" || ux_fail "No se pudo preparar la carpeta Aplicaciones de tu usuario."
+  [ -w "$HOME/Applications" ] || ux_fail "No se puede escribir en la carpeta Aplicaciones de tu usuario."
+  if [ -e "$HOME/Applications/AirPlay.app" ] || [ -L "$HOME/Applications/AirPlay.app" ]; then
+    ux_is_ours "$HOME/Applications/AirPlay.app" || ux_fail "Ya existe otra AirPlay.app en Aplicaciones de tu usuario; se conserva."
+  fi
+  UX_DEST_DIR="$HOME/Applications"
+}
+ux_find_existing_apps() {
+  local UX_SYSTEM_OWN UX_USER_OWN
+  UX_SYSTEM_OWN=0
+  UX_USER_OWN=0
+  UX_EXISTING_APP=""
+  if ux_is_ours /Applications/AirPlay.app; then
+    UX_SYSTEM_OWN=1
+    ux_note "Copia propia en /Applications/AirPlay.app; version $(ux_plist_get /Applications/AirPlay.app CFBundleShortVersionString); build $(ux_plist_get /Applications/AirPlay.app CFBundleVersion)."
+  fi
+  if ux_is_ours "$HOME/Applications/AirPlay.app"; then
+    UX_USER_OWN=1
+    ux_note "Copia propia en $HOME/Applications/AirPlay.app; version $(ux_plist_get "$HOME/Applications/AirPlay.app" CFBundleShortVersionString); build $(ux_plist_get "$HOME/Applications/AirPlay.app" CFBundleVersion)."
+  fi
+  if [ "$UX_SYSTEM_OWN" -eq 1 ] && [ "$UX_USER_OWN" -eq 1 ]; then
+    ux_fail "Hay dos copias propias de AirPlay: /Applications/AirPlay.app y $HOME/Applications/AirPlay.app. Adjunta el ZIP para elegir cual actualizar. No se modifico ninguna de las dos."
+  elif [ "$UX_SYSTEM_OWN" -eq 1 ]; then
+    UX_EXISTING_APP="/Applications/AirPlay.app"
+  elif [ "$UX_USER_OWN" -eq 1 ]; then
+    UX_EXISTING_APP="$HOME/Applications/AirPlay.app"
+  else
+    ux_note "No se encontro una AirPlay.app propia en las dos carpetas Aplicaciones."
+  fi
+}
+
+if [ "$#" -eq 1 ] && [ "$1" = --build-only ]; then
+  UX_MODE="build-only"
+elif [ "$#" -ne 0 ]; then
+  ux_fail "Uso: /bin/bash este-archivo.command [--build-only]"
+fi
+if [ "$UX_MODE" = build-only ] && [ "$UX_UPDATE_CHANNEL_STATE" != CONFIGURED_MANUAL ]; then
+  ux_fail "La preparacion para release requiere un feed y una clave publica validos. Genera este archivo con UpdateConfig.plist antes de compilar."
+fi
+[ "$(/usr/bin/uname -s)" = Darwin ] || ux_fail "Ejecuta este archivo en un Mac Intel."
+[ "$(/usr/bin/uname -m)" = x86_64 ] || ux_fail "Esta version esta preparada para Mac Intel."
+/bin/mkdir -p "$UX_ROOT" || ux_fail "No se pudo preparar la carpeta de compilacion."
+UX_STAMP="$(/bin/date '+%Y%m%d-%H%M%S')-$$"
+UX_WORK="$(/usr/bin/mktemp -d "$UX_ROOT/airplay-$UX_STAMP-XXXXXX")" || ux_fail "No se pudo crear la copia aislada."
+UX_SRC="$UX_WORK/fuente"
+UX_BUILD="$UX_WORK/compilacion"
+UX_RUN="$UX_WORK/registros"
+UX_APP="$UX_WORK/bundle.noindex/AirPlay.app"
+UX_APP_BIN="$UX_APP/Contents/MacOS/uxplay"
+/bin/mkdir -p "$UX_SRC" "$UX_RUN" ||
+  ux_fail "No se pudo preparar la carpeta de esta instalacion."
+UX_STATUS="$UX_RUN/sesion.txt"
+UX_BUILD_LOG="$UX_RUN/preparacion.log"
+if [ "$UX_MODE" = install ]; then
+  UX_ZIP="$HOME/Desktop/AirPlay-Actualizacion-$UX_STAMP.zip"
+  [ -d "$HOME/Desktop" ] || UX_ZIP="$UX_WORK/AirPlay-Actualizacion-$UX_STAMP.zip"
+else
+  UX_ZIP="$UX_WORK/AirPlay-Preparacion-$UX_STAMP.zip"
+fi
+for UX_FILE in sesion.txt preparacion.log sistema.txt codesign.log runtime-check.log ui-check.log sparkle-check.log dependencias.txt load-commands.txt rpaths.txt enlaces-verificados.txt receptores-activos.txt; do
+  : > "$UX_RUN/$UX_FILE" || ux_fail "No se pudo escribir en $UX_RUN"
+done
+{
+  printf 'AirPlay.app 1.3.2: volumen y preparacion de actualizaciones\n'
+  printf 'Bundle: %s\nFuente de origen: %s\n' "$UX_BUNDLE_ID" "$UX_COMMIT"
+  printf 'Copia aislada de compilacion: %s\n' "$UX_WORK"
+  printf 'Modo: %s\nCanal incluido: %s\n' "$UX_MODE" "$UX_UPDATE_CHANNEL_STATE"
+  printf 'GStreamer externo: %s\n' "$UX_GST"
+  printf 'No se configura el inicio de sesion desde este instalador.\n'
+} > "$UX_STATUS"
+
+ux_restore_previous() {
+  [ "$UX_MODE" = install ] || return 0
+  if [ "$UX_INSTALLED" -eq 1 ]; then return; fi
+  if [ "$UX_MOVED_NEW" -eq 1 ] && ux_is_ours "$UX_DEST_APP"; then
+    if [ ! -e "$UX_STAGED_APP" ] && [ ! -L "$UX_STAGED_APP" ]; then
+      if /bin/mv "$UX_DEST_APP" "$UX_STAGED_APP"; then
+        UX_MOVED_NEW=0
+        ux_note "La copia nueva no confirmada vuelve a preparacion: $UX_STAGED_APP"
+      else
+        ux_note "No se pudo retirar la copia nueva para restaurar la anterior."
+      fi
+    fi
+  fi
+  if [ "$UX_MOVED_OLD" -eq 1 ] && [ ! -e "$UX_DEST_APP" ] && [ ! -L "$UX_DEST_APP" ] && ux_is_ours "$UX_BACKUP"; then
+    if /bin/mv "$UX_BACKUP" "$UX_DEST_APP"; then
+      UX_MOVED_OLD=0
+      ux_note "Aplicacion anterior restaurada en $UX_DEST_APP"
+    else
+      ux_note "No se pudo restaurar la aplicacion anterior; respaldo conservado: $UX_BACKUP"
+    fi
+  fi
+}
+ux_finish() {
+  local UX_EXIT_CODE=$?
+  trap - EXIT
+  trap '' INT TERM HUP
+  ux_restore_previous
+  ux_note "Etapa final: $UX_PHASE. Salida del instalador: $UX_EXIT_CODE."
+  ux_note "Aplicacion instalada y verificada: $UX_INSTALLED. Apertura solicitada: $UX_OPENED."
+  ux_note "Bundle preparado sin instalar: $UX_PREPARED. Paquete: $UX_PACKAGE_ARCHIVE. SHA256 ZIP: $UX_PACKAGE_SHA."
+  ux_note "Destino: $UX_DEST_APP. Respaldo: $UX_BACKUP. SHA256 Mach-O firmado: $UX_SIGNED_BIN_SHA."
+  if [ -n "$UX_STAGE_PARENT" ]; then
+    /bin/rmdir "$UX_STAGE_PARENT/contenido.noindex" 2>/dev/null || :
+    /bin/rmdir "$UX_STAGE_PARENT" 2>/dev/null || :
+  fi
+  /bin/rmdir "$UX_WORK/bundle.noindex" 2>/dev/null || :
+  if /usr/bin/zip -q -j "$UX_ZIP" "$UX_RUN"/*; then
+    printf '\nRegistro de esta ejecucion:\n%s\n' "$UX_ZIP"
+    if [ "$UX_EXIT_CODE" -ne 0 ]; then
+      printf 'Conserva ese ZIP para revisar lo que ocurrio.\n'
+      if [ "$UX_MODE" = install ]; then /usr/bin/open -R "$UX_ZIP" >/dev/null 2>&1 || :; fi
+    fi
+  else
+    printf '\nNo se pudo crear el ZIP. Los registros estan en:\n%s\n' "$UX_RUN" >&2
+  fi
+  if [ "$UX_INSTALLED" -eq 1 ]; then
+    printf '\nAirPlay quedo instalado en:\n%s\n' "$UX_DEST_APP"
+    printf '\nRegistros de la app:\n%s\n' "$HOME/Library/Logs/AirPlay"
+  fi
+  exit "$UX_EXIT_CODE"
+}
+trap ux_finish EXIT
+trap 'ux_note "Control+C durante $UX_PHASE"; exit 130' INT
+trap 'ux_note "TERM durante $UX_PHASE"; exit 143' TERM
+trap 'ux_note "Cierre de Terminal durante $UX_PHASE"; exit 129' HUP
+ux_note "Inicio; modo $UX_MODE."
+{
+  /usr/bin/sw_vers
+  /usr/bin/uname -m
+  /usr/bin/xcode-select -p
+} > "$UX_RUN/sistema.txt" 2>&1
+
+printf '\n1/4 - Verificando herramientas y fuentes\n'
+UX_PHASE="verificacion de herramientas"
+if [ "$UX_MODE" = install ]; then ux_check_receivers_closed; fi
+[ -x "$UX_CMAKE" ] || ux_fail "Configura AIRPLAY_CMAKE con la ruta del CMake instalado."
+[ -x "$UX_PKG" ] || ux_fail "No se encontro pkg-config en el framework instalado."
+[ -r "$UX_PREFIX/lib/libplist-2.0.a" ] || ux_fail "No se encontro libplist."
+[ -r "$UX_GST/lib/libcrypto.a" ] || ux_fail "No se encontro libcrypto."
+UX_CC="$(/usr/bin/xcrun --find clang)" || ux_fail "No se encontro clang."
+UX_CXX="$(/usr/bin/xcrun --find clang++)" || ux_fail "No se encontro clang++."
+UX_OTOOL="$(/usr/bin/xcrun --find otool)" || ux_fail "No se encontro otool."
+UX_LIPO="$(/usr/bin/xcrun --find lipo)" || ux_fail "No se encontro lipo."
+UX_SDK="$(/usr/bin/xcrun --sdk macosx --show-sdk-path)" || ux_fail "No se encontro el SDK de macOS."
+UX_PYTHON="$(/usr/bin/xcrun --find python3)" || ux_fail "No se encontro Python 3 de las herramientas de desarrollo."
+[ -x "$UX_PYTHON" ] || ux_fail "Python 3 no se puede ejecutar."
+for UX_TOOL in /usr/bin/codesign /usr/bin/plutil /usr/libexec/PlistBuddy /bin/mv /usr/bin/find /usr/bin/curl /usr/bin/ditto; do
+  [ -x "$UX_TOOL" ] || ux_fail "No se encontro la herramienta necesaria: $UX_TOOL"
+done
+ux_run "$UX_CMAKE" --version
+ux_run "$UX_CXX" --version
+if [ -z "$UX_ORIGINAL_SRC" ] && /usr/bin/git -C "$HOME/Applications/UxPlay-Prueba-1.73.7/fuente" \
+  cat-file -e "$UX_COMMIT^{commit}" >/dev/null 2>&1; then
+  UX_ORIGINAL_SRC="$HOME/Applications/UxPlay-Prueba-1.73.7/fuente"
+  ux_note "Se reutiliza el checkout historico en su commit verificado: $UX_ORIGINAL_SRC"
+fi
+if [ -z "$UX_ORIGINAL_SRC" ]; then
+  UX_ORIGINAL_SRC="$UX_WORK/upstream.git"
+  ux_run /usr/bin/git init --bare "$UX_ORIGINAL_SRC"
+  ux_run /usr/bin/git -C "$UX_ORIGINAL_SRC" fetch --depth 1 "https://github.com/FDH2/UxPlay.git" "$UX_COMMIT"
+fi
+ux_run /usr/bin/git -C "$UX_ORIGINAL_SRC" cat-file -e "$UX_COMMIT^{commit}"
+
+UX_PHASE="preparacion de Sparkle"
+UX_SPARKLE_ARCHIVE="${AIRPLAY_SPARKLE_ARCHIVE:-$UX_SCRIPT_DIR/Sparkle-$UX_SPARKLE_VERSION.tar.xz}"
+if [ -n "${AIRPLAY_SPARKLE_ARCHIVE:-}" ] && [ ! -r "$UX_SPARKLE_ARCHIVE" ]; then ux_fail "No se puede leer AIRPLAY_SPARKLE_ARCHIVE."; fi
+if [ -z "${AIRPLAY_SPARKLE_ARCHIVE:-}" ] && [ ! -e "$UX_SPARKLE_ARCHIVE" ]; then
+  # One known cache layout only; no recursive search of the user's files.
+  for UX_SPARKLE_CANDIDATE in "$UX_ROOT"/airplay-*/vendor.noindex/Sparkle-"$UX_SPARKLE_VERSION".tar.xz; do
+    [ -f "$UX_SPARKLE_CANDIDATE" ] || continue
+    UX_SPARKLE_CANDIDATE_SHA="$(ux_hash "$UX_SPARKLE_CANDIDATE")" || continue
+    if [ "$UX_SPARKLE_CANDIDATE_SHA" = "$UX_SPARKLE_SHA" ]; then
+      UX_SPARKLE_ARCHIVE="$UX_SPARKLE_CANDIDATE"
+      ux_note "Se reutiliza el archivo Sparkle del cache conocido con SHA256 correcto: $UX_SPARKLE_ARCHIVE"
+      break
+    fi
+  done
+fi
+UX_SPARKLE_ROOT="$UX_WORK/vendor.noindex/Sparkle-$UX_SPARKLE_VERSION"
+/bin/mkdir -p "$UX_SPARKLE_ROOT" || ux_fail "No se pudo preparar Sparkle."
+if [ -e "$UX_SPARKLE_ARCHIVE" ]; then
+  ux_note "Se usa el archivo Sparkle disponible: $UX_SPARKLE_ARCHIVE"
+else
+  UX_SPARKLE_ARCHIVE="$UX_WORK/vendor.noindex/Sparkle-$UX_SPARKLE_VERSION.tar.xz"
+  printf 'Descargando la version verificada del componente de actualizaciones...\n'
+  ux_run /usr/bin/curl --fail --location --proto '=https' --tlsv1.2 \
+    --connect-timeout 20 --max-time 240 --output "$UX_SPARKLE_ARCHIVE" "$UX_SPARKLE_URL"
+fi
+ux_check_file "$UX_SPARKLE_ARCHIVE" "$UX_SPARKLE_SHA" "archivo oficial Sparkle 2.9.6"
+ux_run /usr/bin/tar -xJf "$UX_SPARKLE_ARCHIVE" -C "$UX_SPARKLE_ROOT"
+[ -r "$UX_SPARKLE_ROOT/Sparkle.framework/Headers/SPUUpdater.h" ] || ux_fail "El framework Sparkle no esta completo."
+ux_run "$UX_LIPO" "$UX_SPARKLE_ROOT/Sparkle.framework/Sparkle" -verify_arch x86_64
+if ! /usr/bin/codesign --verify --deep --strict --verbose=2 "$UX_SPARKLE_ROOT/Sparkle.framework" > "$UX_RUN/sparkle-check.log" 2>&1; then
+  ux_fail "La firma original del componente de actualizaciones no paso la verificacion."
+fi
+ux_note "Sparkle 2.9.6 verificado; canal de actualizaciones @@UPDATE_CHANNEL_STATE@@."
+
+UX_PHASE="preparacion de las fuentes"
+if ! /usr/bin/git -C "$UX_ORIGINAL_SRC" archive --format=tar "$UX_COMMIT" > "$UX_WORK/origen.tar" 2>> "$UX_BUILD_LOG"; then
+  ux_fail "No se pudo extraer el commit desde el repositorio local."
+fi
+ux_run /usr/bin/tar -xf "$UX_WORK/origen.tar" -C "$UX_SRC"
+/bin/rm -f "$UX_WORK/origen.tar"
+/bin/cat > "$UX_RUN/upstream-sha256.txt" <<'AIRPLAY_UPSTREAM_MANIFEST'
+@@UPSTREAM_MANIFEST@@
+AIRPLAY_UPSTREAM_MANIFEST
+if ! (cd "$UX_SRC" && /usr/bin/shasum -a 256 -c "$UX_RUN/upstream-sha256.txt") >> "$UX_BUILD_LOG" 2>&1; then
+  ux_fail "Las fuentes originales no coinciden con el commit fijado."
+fi
+
+@@SOURCE_PAYLOADS@@
+ux_check_final_sources
+ux_check_file "$UX_SRC/lib/raop_rtp.c" "$UX_AUDIO_SHA" "fuente de audio conservada"
+/bin/cat > "$UX_RUN/fuentes-sha256.txt" <<'AIRPLAY_SOURCE_MANIFEST'
+@@SOURCE_MANIFEST@@
+AIRPLAY_SOURCE_MANIFEST
+[ "$?" -eq 0 ] || ux_fail "No se pudo guardar el manifiesto de fuentes."
+
+printf '\n2/4 - Compilando AirPlay\n'
+printf 'Esto puede tardar unos minutos.\n'
+UX_PHASE="compilacion"
+ux_run /usr/bin/env PKG_CONFIG_LIBDIR="$UX_PREFIX/lib/pkgconfig:$UX_GST/lib/pkgconfig" \
+  "$UX_CMAKE" -S "$UX_SRC" -B "$UX_BUILD" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DNO_MARCH_NATIVE=ON \
+    -DCMAKE_OSX_ARCHITECTURES=x86_64 \
+    -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
+    -DCMAKE_OSX_SYSROOT="$UX_SDK" \
+    -DCMAKE_C_COMPILER="$UX_CC" \
+    -DCMAKE_CXX_COMPILER="$UX_CXX" \
+    -DCMAKE_OBJCXX_COMPILER="$UX_CXX" \
+    -DCMAKE_PREFIX_PATH="$UX_PREFIX;$UX_GST" \
+    -DPKG_CONFIG_EXECUTABLE="$UX_PKG" \
+    -DLIBPLIST="$UX_PREFIX/lib/libplist-2.0.a" \
+    -DLIBCRYPTO="$UX_GST/lib/libcrypto.a" \
+    -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
+    -DCMAKE_INSTALL_RPATH="$UX_GST/lib" \
+    -DAIRPLAY_SPARKLE_ROOT="$UX_SPARKLE_ROOT"
+ux_run "$UX_CMAKE" --build "$UX_BUILD" --parallel 2
+[ -x "$UX_BUILD/uxplay" ] || ux_fail "La compilacion no dejo el ejecutable esperado."
+ux_run "$UX_LIPO" "$UX_BUILD/uxplay" -verify_arch x86_64
+ux_check_final_sources
+ux_check_file "$UX_SRC/lib/raop_rtp.c" "$UX_AUDIO_SHA" "fuente de audio tras compilar"
+
+printf '\n3/4 - Preparando y verificando la aplicacion\n'
+UX_PHASE="preparacion del bundle"
+/bin/mkdir -p "$UX_APP/Contents/MacOS" "$UX_APP/Contents/Resources" "$UX_APP/Contents/Frameworks" ||
+  ux_fail "No se pudieron preparar las carpetas de la app."
+/bin/cp -X "$UX_BUILD/uxplay" "$UX_APP_BIN" || ux_fail "No se pudo preparar el ejecutable de la app."
+/bin/cat > "$UX_APP/Contents/Resources/receiver.conf" <<'AIRPLAY_RECEIVER_CONFIGURATION'
+@@RECEIVER_CONFIGURATION@@
+AIRPLAY_RECEIVER_CONFIGURATION
+[ "$?" -eq 0 ] || ux_fail "No se pudo escribir la configuracion."
+ux_check_file "$UX_APP/Contents/Resources/receiver.conf" "$UX_CONF_SHA" "configuracion del bundle"
+ux_run /usr/bin/ditto "$UX_SPARKLE_ROOT/Sparkle.framework" "$UX_APP/Contents/Frameworks/Sparkle.framework"
+/bin/cp -X "$UX_SPARKLE_ROOT/LICENSE" "$UX_APP/Contents/Resources/Sparkle-LICENSE.txt" || ux_fail "No se pudo conservar la licencia de Sparkle."
+if ! /usr/bin/codesign --verify --deep --strict --verbose=2 "$UX_APP/Contents/Frameworks/Sparkle.framework" >> "$UX_RUN/sparkle-check.log" 2>&1; then
+  ux_fail "La copia del framework Sparkle no paso la verificacion."
+fi
+@@RESOURCE_PAYLOADS@@
+ux_check_localizations "$UX_APP"
+@@RESOURCE_LINTS@@
+/bin/cat > "$UX_RUN/recursos-sha256.txt" <<'AIRPLAY_RESOURCE_MANIFEST'
+@@RESOURCE_MANIFEST@@
+AIRPLAY_RESOURCE_MANIFEST
+[ "$?" -eq 0 ] || ux_fail "No se pudo guardar el manifiesto de localizaciones."
+/bin/cat > "$UX_APP/Contents/Info.plist" <<'AIRPLAY_INFO_PLIST'
+@@INFO_PLIST@@
+AIRPLAY_INFO_PLIST
+[ "$?" -eq 0 ] || ux_fail "No se pudo escribir Info.plist."
+@@OPTIONAL_ICON@@
+if [ "$UX_MODE" = install ]; then
+@@POSTINSTALL_PAYLOADS@@
+fi
+@@LICENSE_PAYLOADS@@
+
+/bin/cat > "$UX_APP/Contents/Resources/installation.txt" <<'AIRPLAY_INSTALLATION_MARKER'
+local.chevy.airplay
+1
+AIRPLAY_INSTALLATION_MARKER
+[ "$?" -eq 0 ] || ux_fail "No se pudo escribir el identificador de esta instalacion."
+{
+  printf 'AirPlay.app 1.3.2, preparacion local\n'
+  printf 'Origen UxPlay: %s\n' "$UX_COMMIT"
+  printf 'Fuente de audio SHA256: %s\n' "$UX_AUDIO_SHA"
+  printf 'Configuracion SHA256: %s\n' "$UX_CONF_SHA"
+  printf 'GStreamer externo: %s\n' "$UX_GST"
+  printf 'Fuentes completas de esta compilacion: %s\n\n' "$UX_SRC"
+  /bin/cat "$UX_RUN/fuentes-sha256.txt"
+  printf '\nLocalizaciones del bundle:\n'
+  /bin/cat "$UX_RUN/recursos-sha256.txt"
+} > "$UX_APP/Contents/Resources/build-manifest.txt" || ux_fail "No se pudo guardar el manifiesto de la app."
+if [ -r "$UX_SRC/LICENSE" ]; then
+  /bin/cp -X "$UX_SRC/LICENSE" "$UX_APP/Contents/Resources/LICENSE" || ux_fail "No se pudo conservar la licencia."
+elif [ -r "$UX_SRC/COPYING" ]; then
+  /bin/cp -X "$UX_SRC/COPYING" "$UX_APP/Contents/Resources/COPYING" || ux_fail "No se pudo conservar la licencia."
+fi
+/bin/chmod 755 "$UX_APP" "$UX_APP/Contents" "$UX_APP/Contents/MacOS" "$UX_APP/Contents/Resources" "$UX_APP/Contents/Frameworks" "$UX_APP_BIN" ||
+  ux_fail "No se pudieron preparar los permisos de la app."
+/bin/chmod 644 "$UX_APP/Contents/Info.plist" || ux_fail "No se pudo preparar Info.plist."
+/usr/bin/find "$UX_APP/Contents/Resources" -type d -exec /bin/chmod 755 {} + || ux_fail "No se pudieron preparar las carpetas de recursos."
+/usr/bin/find "$UX_APP/Contents/Resources" -type f -exec /bin/chmod 644 {} + || ux_fail "No se pudieron preparar los recursos de la app."
+ux_run /usr/bin/plutil -lint "$UX_APP/Contents/Info.plist"
+ux_check_file "$UX_APP/Contents/Info.plist" "$UX_INFO_PLIST_SHA" "ficha y canal previstos del bundle"
+[ "$(ux_plist_get "$UX_APP" CFBundleName)" = AirPlay ] &&
+[ "$(ux_plist_get "$UX_APP" CFBundleDisplayName)" = AirPlay ] &&
+[ "$(ux_plist_get "$UX_APP" CFBundlePackageType)" = APPL ] && ux_is_ours "$UX_APP" ||
+  ux_fail "La identidad del bundle no coincide con la esperada."
+[ "$(ux_plist_get "$UX_APP" CFBundleIconFile)" = AirPlay.icns ] &&
+[ -s "$UX_APP/Contents/Resources/AirPlay.icns" ] || ux_fail "Falta el icono de la app."
+/bin/cp -X "$UX_APP/Contents/Info.plist" "$UX_RUN/Info.plist" || ux_fail "No se pudo guardar la ficha del bundle."
+
+UX_PHASE="verificacion de dependencias"
+"$UX_OTOOL" -arch x86_64 -L "$UX_APP_BIN" > "$UX_RUN/dependencias.txt" 2>> "$UX_BUILD_LOG" || ux_fail "No se pudieron leer las dependencias Mach-O."
+"$UX_OTOOL" -arch x86_64 -l "$UX_APP_BIN" > "$UX_RUN/load-commands.txt" 2>> "$UX_BUILD_LOG" || ux_fail "No se pudieron leer las rutas Mach-O."
+/usr/bin/awk '
+  $1 == "cmd" && $2 == "LC_RPATH" {wanted=1; next}
+  wanted && $1 == "path" {
+    sub(/^[[:space:]]*path[[:space:]]+/, "")
+    sub(/[[:space:]]+\(offset[[:space:]]+[0-9]+\)$/, "")
+    print; wanted=0
+  }
+' "$UX_RUN/load-commands.txt" > "$UX_RUN/rpaths.txt"
+UX_HAS_GST_RPATH=0
+UX_HAS_SPARKLE_RPATH=0
+while IFS= read -r UX_RPATH; do
+  [ "$UX_RPATH" = "$UX_GST/lib" ] && UX_HAS_GST_RPATH=1
+  [ "$UX_RPATH" = "@loader_path/../Frameworks" ] && UX_HAS_SPARKLE_RPATH=1
+  case "$UX_RPATH" in "$UX_ROOT"/*|"$UX_WORK"/*)
+    ux_fail "El ejecutable conserva una ruta de compilacion como dependencia: $UX_RPATH" ;;
+  esac
+done < "$UX_RUN/rpaths.txt"
+[ "$UX_HAS_GST_RPATH" -eq 1 ] || ux_fail "Falta la ruta del framework instalado en el ejecutable."
+[ "$UX_HAS_SPARKLE_RPATH" -eq 1 ] || ux_fail "Falta la ruta del framework Sparkle incluido en el bundle."
+/usr/bin/awk 'NR > 1 {
+  sub(/^[[:space:]]+/, "")
+  sub(/[[:space:]]+\(compatibility version.*$/, "")
+  if (length($0)) print
+}' "$UX_RUN/dependencias.txt" > "$UX_RUN/dependencias-rutas.txt"
+while IFS= read -r UX_DEP; do
+  case "$UX_DEP" in
+    /System/Library/*|/usr/lib/*)
+      printf 'Sistema (incluye shared cache): %s\n' "$UX_DEP" >> "$UX_RUN/enlaces-verificados.txt"
+      continue ;;
+    "$UX_GST"/*) UX_RESOLVED="$UX_DEP" ;;
+    @rpath/Sparkle.framework/*) UX_RESOLVED="$UX_APP/Contents/Frameworks/${UX_DEP#@rpath/}" ;;
+    @rpath/*) UX_RESOLVED="$UX_GST/lib/${UX_DEP#@rpath/}" ;;
+    @loader_path/*) UX_RESOLVED="$UX_APP/Contents/MacOS/${UX_DEP#@loader_path/}" ;;
+    @executable_path/*) UX_RESOLVED="$UX_APP/Contents/MacOS/${UX_DEP#@executable_path/}" ;;
+    *) ux_fail "Hay una dependencia fuera de las rutas previstas: $UX_DEP" ;;
+  esac
+  [ -r "$UX_RESOLVED" ] || ux_fail "No se encontro la dependencia: $UX_DEP"
+  printf '%s -> %s\n' "$UX_DEP" "$UX_RESOLVED" >> "$UX_RUN/enlaces-verificados.txt"
+done < "$UX_RUN/dependencias-rutas.txt"
+
+UX_PHASE="firma local de la app"
+if ! /usr/bin/codesign --force --sign - --identifier "$UX_BUNDLE_ID" "$UX_APP" > "$UX_RUN/codesign.log" 2>&1; then
+  ux_fail "No se pudo completar la firma local de AirPlay."
+fi
+if ! /usr/bin/codesign --verify --deep --strict --verbose=2 "$UX_APP" >> "$UX_RUN/codesign.log" 2>&1; then
+  ux_fail "La verificacion de la firma local no paso."
+fi
+/usr/bin/codesign --display --verbose=4 "$UX_APP" >> "$UX_RUN/codesign.log" 2>&1 || :
+UX_SIGNED_BIN_SHA="$(ux_hash "$UX_APP_BIN")" || ux_fail "No se pudo verificar el ejecutable firmado."
+
+if [ "$UX_MODE" = install ]; then
+  UX_PHASE="preparacion del destino"
+  ux_find_existing_apps
+  if [ -n "$UX_EXISTING_APP" ]; then
+    UX_TARGET_WAS_EXISTING=1
+    UX_DEST_DIR="${UX_EXISTING_APP%/AirPlay.app}"
+    [ -w "$UX_DEST_DIR" ] ||
+      ux_fail "AirPlay esta en $UX_EXISTING_APP, pero no se puede escribir en esa carpeta para actualizarla. Se conserva esa copia y no se crea otra en otra ubicacion."
+    ux_note "Se actualizara la copia existente en su misma ubicacion: $UX_EXISTING_APP"
+  else
+    if [ -d /Applications ] && [ -w /Applications ]; then
+      if [ ! -e /Applications/AirPlay.app ] && [ ! -L /Applications/AirPlay.app ]; then
+        UX_DEST_DIR="/Applications"
+      else
+        ux_note "AirPlay.app en /Applications pertenece a otra instalacion; se conserva."
+      fi
+    fi
+    if [ -z "$UX_DEST_DIR" ]; then
+      ux_select_user_destination
+    fi
+  fi
+  UX_DEST_APP="$UX_DEST_DIR/AirPlay.app"
+  if ! UX_STAGE_PARENT="$(/usr/bin/mktemp -d "$UX_DEST_DIR/.AirPlay-preparacion-$UX_STAMP-XXXXXX" 2>> "$UX_BUILD_LOG")"; then
+    if [ "$UX_TARGET_WAS_EXISTING" -eq 1 ]; then
+      ux_fail "No se pudo preparar la actualizacion en la carpeta de la app existente: $UX_DEST_DIR. Se conserva esa copia."
+    elif [ "$UX_DEST_DIR" = /Applications ]; then
+      ux_note "/Applications no permitio crear la copia; se usa Aplicaciones del usuario."
+      ux_select_user_destination
+      UX_DEST_APP="$UX_DEST_DIR/AirPlay.app"
+      UX_STAGE_PARENT="$(/usr/bin/mktemp -d "$UX_DEST_DIR/.AirPlay-preparacion-$UX_STAMP-XXXXXX" 2>> "$UX_BUILD_LOG")" ||
+        ux_fail "No se pudo preparar la copia final en $UX_DEST_DIR"
+    else
+      ux_fail "No se pudo preparar la copia final en $UX_DEST_DIR"
+    fi
+  fi
+  /bin/mkdir "$UX_STAGE_PARENT/contenido.noindex" || ux_fail "No se pudo preparar el staging de la app."
+  UX_STAGED_APP="$UX_STAGE_PARENT/contenido.noindex/AirPlay.app"
+  ux_run /bin/mv "$UX_APP" "$UX_STAGED_APP"
+  ux_note "Bundle nuevo trasladado al staging: $UX_STAGED_APP"
+else
+  UX_STAGED_APP="$UX_APP"
+  ux_note "El bundle permanece en la carpeta aislada: $UX_STAGED_APP"
+fi
+if ! /usr/bin/codesign --verify --deep --strict --verbose=2 "$UX_STAGED_APP" >> "$UX_RUN/codesign.log" 2>&1; then
+  ux_fail "La copia preparada para instalar no paso la verificacion."
+fi
+ux_check_file "$UX_STAGED_APP/Contents/MacOS/uxplay" "$UX_SIGNED_BIN_SHA" "Mach-O firmado de la copia final"
+ux_check_file "$UX_STAGED_APP/Contents/Resources/receiver.conf" "$UX_CONF_SHA" "configuracion de la copia final"
+ux_check_localizations "$UX_STAGED_APP"
+UX_PHASE="comprobacion de arranque sin Terminal"
+printf 'Comprobando que AirPlay cargue su configuracion y la salida de audio y video...\n'
+UX_USER_NAME="$(/usr/bin/id -un)" || ux_fail "No se pudo identificar al usuario local."
+UX_CHECK_ENV=(HOME="$HOME" USER="$UX_USER_NAME" LOGNAME="$UX_USER_NAME"
+  PATH="/usr/bin:/bin:/usr/sbin:/sbin" TMPDIR="${TMPDIR:-/tmp}" LANG="en_US.UTF-8")
+if [ "$UX_MODE" = build-only ]; then
+  UX_CHECK_ENV+=(GST_REGISTRY="$UX_WORK/gstreamer-check-registry.bin")
+fi
+if /usr/bin/env -i "${UX_CHECK_ENV[@]}" \
+  "$UX_STAGED_APP/Contents/MacOS/uxplay" --airplay-check > "$UX_RUN/runtime-check.log" 2>&1 < /dev/null; then
+  ux_note "--airplay-check completo con entorno limpio; codigo 0, sin receptor ni ventana."
+else
+  UX_CHECK_CODE=$?
+  ux_note "--airplay-check fallo con codigo $UX_CHECK_CODE."
+  ux_fail "La comprobacion de arranque de AirPlay fallo. Se conserva la version anterior."
+fi
+
+UX_PHASE="comprobacion de Preferencias"
+printf 'Comprobando Preferencias y volumen en los diez idiomas...\n'
+if /usr/bin/env -i "${UX_CHECK_ENV[@]}" \
+  "$UX_STAGED_APP/Contents/MacOS/uxplay" --airplay-ui-check > "$UX_RUN/ui-check.log" 2>&1 < /dev/null; then
+  ux_note "--airplay-ui-check completo; codigo 0, sin receptor, red ni cambios de preferencias."
+else
+  UX_CHECK_CODE=$?
+  ux_note "--airplay-ui-check fallo con codigo $UX_CHECK_CODE."
+  ux_fail "La comprobacion de Preferencias fallo. Se conserva la version anterior."
+fi
+
+if [ "$UX_MODE" = build-only ]; then
+  printf '\n4/4 - Preparando el paquete sin instalar\n'
+  UX_PHASE="preparacion del paquete"
+  # This path stops before any installation, LaunchServices or cleanup action.
+  # Its archive is a build artifact: release signing and publication are separate.
+  [ "$UX_UPDATE_CHANNEL_STATE" = CONFIGURED_MANUAL ] || ux_fail "Falta un canal valido para preparar la release."
+  ux_check_file "$UX_STAGED_APP/Contents/Info.plist" "$UX_INFO_PLIST_SHA" "canal validado de la app preparada"
+  UX_RELEASE_VERSION="$(ux_plist_get "$UX_STAGED_APP" CFBundleShortVersionString)" || ux_fail "Falta la version del bundle."
+  UX_RELEASE_BUILD="$(ux_plist_get "$UX_STAGED_APP" CFBundleVersion)" || ux_fail "Falta el build del bundle."
+  case "$UX_RELEASE_VERSION" in ''|*[!0-9A-Za-z.-]*) ux_fail "La version no sirve como nombre de paquete." ;; esac
+  case "$UX_RELEASE_BUILD" in ''|0|*[!0-9]*) ux_fail "El build del paquete debe ser un entero positivo." ;; esac
+  UX_PACKAGE_DIR="$UX_WORK/paquete.noindex"
+  /bin/mkdir "$UX_PACKAGE_DIR" || ux_fail "No se pudo preparar la carpeta del paquete."
+  UX_PACKAGE_ARCHIVE="$UX_PACKAGE_DIR/AirPlay-$UX_RELEASE_VERSION-$UX_RELEASE_BUILD.zip"
+  UX_PACKAGE_PARTIAL="$UX_PACKAGE_ARCHIVE.partial"
+  UX_PACKAGE_CHECK="$UX_PACKAGE_DIR/verificacion.noindex"
+  ux_run /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$UX_STAGED_APP" "$UX_PACKAGE_PARTIAL"
+  ux_run /usr/bin/ditto -x -k "$UX_PACKAGE_PARTIAL" "$UX_PACKAGE_CHECK"
+  ux_is_ours "$UX_PACKAGE_CHECK/AirPlay.app" || ux_fail "El ZIP no conserva la identidad de la app."
+  if ! /usr/bin/codesign --verify --deep --strict --verbose=2 "$UX_PACKAGE_CHECK/AirPlay.app" >> "$UX_RUN/codesign.log" 2>&1; then
+    ux_fail "La firma del bundle no se conservo al comprimir y extraer."
+  fi
+  ux_check_file "$UX_PACKAGE_CHECK/AirPlay.app/Contents/MacOS/uxplay" "$UX_SIGNED_BIN_SHA" "ejecutable extraido del paquete"
+  ux_check_file "$UX_PACKAGE_CHECK/AirPlay.app/Contents/Info.plist" "$UX_INFO_PLIST_SHA" "ficha extraida del paquete"
+  ux_check_file "$UX_PACKAGE_CHECK/AirPlay.app/Contents/Resources/receiver.conf" "$UX_CONF_SHA" "configuracion extraida del paquete"
+  ux_check_localizations "$UX_PACKAGE_CHECK/AirPlay.app"
+  ux_run /bin/mv "$UX_PACKAGE_PARTIAL" "$UX_PACKAGE_ARCHIVE"
+  UX_PACKAGE_SHA="$(ux_hash "$UX_PACKAGE_ARCHIVE")" || ux_fail "No se pudo verificar el ZIP preparado."
+  "$UX_PYTHON" - "$UX_STAGED_APP" "$UX_PACKAGE_ARCHIVE" "$UX_PACKAGE_SHA" "$UX_SIGNED_BIN_SHA" "$UX_COMMIT" "$UX_GST" <<'AIRPLAY_BUILD_ONLY_REPORT'
+import json
+import plistlib
+from pathlib import Path
+import sys
+
+app, archive = Path(sys.argv[1]), Path(sys.argv[2])
+with (app / 'Contents/Info.plist').open('rb') as stream:
+    info = plistlib.load(stream)
+report = {
+    'schema': 1,
+    'status': 'AWAITING_RELEASE_SIGNATURE_AND_PUBLICATION',
+    'bundle': str(app),
+    'bundle_id': info['CFBundleIdentifier'],
+    'version': info['CFBundleShortVersionString'],
+    'build': info['CFBundleVersion'],
+    'minimum_macos': info['LSMinimumSystemVersion'],
+    'archive': archive.name,
+    'archive_sha256': sys.argv[3],
+    'archive_bytes': archive.stat().st_size,
+    'executable_sha256': sys.argv[4],
+    'upstream_commit': sys.argv[5],
+    'external_gstreamer': sys.argv[6],
+    'feed_url': info['SUFeedURL'],
+    'public_ed25519_key': info['SUPublicEDKey'],
+    'bundle_code_signature': 'ad-hoc',
+    'checks': ['bundle-signature', 'airplay-check', 'airplay-ui-check', 'archive-roundtrip'],
+    'archive_signed_ed25519': False,
+    'feed_access_verified': False,
+    'published': False,
+    'installed': False,
+}
+with (archive.parent / 'preparacion.json').open('x', encoding='utf-8') as stream:
+    json.dump(report, stream, indent=2, ensure_ascii=False)
+    stream.write('\n')
+AIRPLAY_BUILD_ONLY_REPORT
+  [ "$?" -eq 0 ] || ux_fail "No se pudo escribir la ficha del paquete."
+  /bin/cp -X "$UX_PACKAGE_DIR/preparacion.json" "$UX_RUN/preparacion.json" || ux_fail "No se pudo conservar la ficha en los registros."
+  UX_PREPARED=1
+  ux_note "Bundle y ZIP preparados y verificados; faltan firma EdDSA del ZIP y publicacion del canal."
+  printf '\nBundle preparado:\n%s\n\nPaquete:\n%s\n\nSHA256 del ZIP:\n%s\n' "$UX_STAGED_APP" "$UX_PACKAGE_ARCHIVE" "$UX_PACKAGE_SHA"
+  printf '\nFicha de preparacion:\n%s\n' "$UX_PACKAGE_DIR/preparacion.json"
+  printf '\nLa app instalada sigue intacta. El ZIP todavia requiere firma EdDSA y publicacion para usarse en Sparkle.\n'
+  UX_PHASE="preparacion terminada"
+  exit 0
+fi
+
+printf '\n4/4 - Instalando la actualizacion de AirPlay\n' 
+UX_PHASE="instalacion"
+ux_check_receivers_closed
+ux_find_existing_apps
+if [ -n "$UX_EXISTING_APP" ] && [ "$UX_EXISTING_APP" != "$UX_DEST_APP" ]; then
+  ux_fail "La copia de AirPlay ahora aparece en otra ubicacion: $UX_EXISTING_APP. Adjunta el ZIP para revisar el destino."
+fi
+if [ "$UX_TARGET_WAS_EXISTING" -eq 1 ] && [ "$UX_EXISTING_APP" != "$UX_DEST_APP" ]; then
+  ux_fail "La copia que ibamos a actualizar ya no esta en su ubicacion. Se detiene la actualizacion para revisar el destino."
+fi
+# El intercambio usa renombrados en el mismo directorio; no interrumpirlos a mitad.
+trap '' INT TERM HUP
+if [ -e "$UX_DEST_APP" ] || [ -L "$UX_DEST_APP" ]; then
+  ux_is_ours "$UX_DEST_APP" || ux_fail "La app que aparece ahora en el destino no es de esta instalacion; se conserva."
+  UX_BACKUP_ROOT="$UX_DEST_DIR/.AirPlay-respaldos.noindex"
+  [ ! -L "$UX_BACKUP_ROOT" ] || ux_fail "La carpeta de respaldos es un enlace simbolico."
+  /bin/mkdir -p "$UX_BACKUP_ROOT" || ux_fail "No se pudo preparar el respaldo."
+  UX_BACKUP="$UX_BACKUP_ROOT/AirPlay-respaldo-$UX_STAMP"
+  [ ! -e "$UX_BACKUP" ] && [ ! -L "$UX_BACKUP" ] || ux_fail "La ruta prevista para el respaldo ya existe."
+  /bin/mv "$UX_DEST_APP" "$UX_BACKUP" || ux_fail "No se pudo conservar la aplicacion anterior."
+  UX_MOVED_OLD=1
+  ux_note "Aplicacion anterior conservada en $UX_BACKUP"
+fi
+[ ! -e "$UX_DEST_APP" ] && [ ! -L "$UX_DEST_APP" ] || ux_fail "El destino se ocupo antes de instalar."
+/bin/mv "$UX_STAGED_APP" "$UX_DEST_APP" || ux_fail "No se pudo colocar la aplicacion en su destino."
+UX_MOVED_NEW=1
+trap 'ux_note "Control+C durante $UX_PHASE"; exit 130' INT
+trap 'ux_note "TERM durante $UX_PHASE"; exit 143' TERM
+trap 'ux_note "Cierre de Terminal durante $UX_PHASE"; exit 129' HUP
+if ! /usr/bin/codesign --verify --deep --strict --verbose=2 "$UX_DEST_APP" >> "$UX_RUN/codesign.log" 2>&1; then
+  ux_fail "La app instalada no paso la verificacion; se intentara restaurar la anterior."
+fi
+ux_is_ours "$UX_DEST_APP" || ux_fail "La identidad de la app instalada no coincide."
+UX_INSTALLED=1
+ux_note "Instalacion confirmada: $UX_DEST_APP"
+UX_PHASE="organizacion de herramientas y accesos"
+UX_CLEANUP_STATE="$HOME/Library/Caches/AirPlay/Mantenimiento/actualizacion-$UX_STAMP"
+printf '\nOrdenando las herramientas y pruebas antiguas identificadas...\n'
+if /bin/bash "$UX_WORK/postinstall.noindex/postinstall-cleanup.sh" \
+  "$UX_DEST_APP" "$UX_CLEANUP_STATE" "$UX_RUN" 2>&1 | /usr/bin/tee "$UX_RUN/mantenimiento.log"; then
+  ux_note "Mantenimiento y registro de AirPlay completados."
+else
+  UX_POSTINSTALL_CODE=$?
+  ux_note "AirPlay sigue instalada correctamente; mantenimiento con avisos, codigo $UX_POSTINSTALL_CODE."
+  printf 'La actualizacion de AirPlay esta completa. El ZIP incluye lo que quedo pendiente de limpieza.\n'
+fi
+UX_PHASE="apertura de AirPlay"
+if /usr/bin/open "$UX_DEST_APP"; then
+  UX_OPENED=1
+else
+  ux_note "La app quedo instalada, pero open no pudo iniciarla."
+  printf '\nLa app esta instalada. Podes abrirla desde Aplicaciones.\n'
+fi
+printf '\nListo. AirPlay quedo actualizada.\n'
+if [ "$UX_OPENED" -eq 1 ]; then
+  printf 'Se esta abriendo AirPlay. Su acceso aparece en la barra de menus, arriba a la derecha.\n'
+fi
+printf 'Con una fuente conectada, hace clic izquierdo en AirPlay para ajustar su volumen.\n'
+printf 'El clic derecho abre el menu, donde podes abrir Preferencias o salir de la app.\n'
+printf 'En Preferencias podes elegir el inicio de sesion, abrir los registros y consultar actualizaciones.\n'
+printf 'Estado del canal incluido en esta compilacion: @@UPDATE_CHANNEL_STATE@@.\n'
+if [ "$UX_OPENED" -eq 1 ]; then
+  printf 'Podes cerrar esta Terminal; la app se ejecuta por separado.\n'
+else
+  printf 'Podes cerrar esta Terminal y abrir AirPlay desde Aplicaciones.\n'
+fi
+if [ -n "$UX_BACKUP" ]; then printf '\nVersion anterior conservada en:\n%s\n' "$UX_BACKUP"; fi
+UX_PHASE="terminado"
+exit 0

@@ -1,0 +1,92 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# INACTIVE TEMPLATE. This does not create or rotate any private key.
+# Rename only inside the reviewed public repository after secret provisioning.
+name: AirPlay public key configuration (existing secret)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: airplay-stable-key-configuration
+  cancel-in-progress: false
+
+jobs:
+  public_configuration:
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' &&
+          github.repository == 'Tangram-Space/updates' &&
+          github.ref == 'refs/heads/main' &&
+          github.event.repository.private == false &&
+          github.event.repository.visibility == 'public' &&
+          vars.AIRPLAY_PUBLIC_CI_ENABLED == 'true' }}
+    runs-on: macos-15-intel
+    timeout-minutes: 10
+    env:
+      AIRPLAY_PUBLIC_CI_ENABLED: ${{ vars.AIRPLAY_PUBLIC_CI_ENABLED }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Read the reviewed public helper sources
+        # actions/checkout v7.0.1, verified official commit.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Prepare an isolated public-output directory
+        env:
+          AIRPLAY_SIGNING_SECRET_PRESENT: ${{ secrets.AIRPLAY_SPARKLE_PRIVATE_KEY != '' }}
+        run: |
+          set -euo pipefail
+          [ "$AIRPLAY_SIGNING_SECRET_PRESENT" = true ] || {
+            printf 'Provision the definitive signing secret first; this job does not generate one.\n' >&2
+            exit 1
+          }
+          AP_PYTHON="$(/usr/bin/xcrun --find python3)"
+          "$AP_PYTHON" - <<'PY'
+          import os
+          from pathlib import Path
+          import tempfile
+          root = Path(os.environ['RUNNER_TEMP']).resolve(strict=True)
+          env_file = Path(os.environ['GITHUB_ENV']).resolve(strict=True)
+          env_file.relative_to(root)
+          folder = Path(tempfile.mkdtemp(prefix='airplay-public-key-', dir=str(root)))
+          values = {'AIRPLAY_SPARKLE_ARCHIVE': folder / 'Sparkle-2.9.6.tar.xz',
+                    'AIRPLAY_PUBLIC_CONFIG_OUTPUT': folder / 'UpdateConfig.plist'}
+          with env_file.open('a', encoding='utf-8') as stream:
+              for key, value in values.items():
+                  if '\n' in str(value) or '\r' in str(value):
+                      raise SystemExit('Unexpected newline in a runner path.')
+                  stream.write(key + '=' + str(value) + '\n')
+          PY
+
+      - name: Fetch the pinned official Sparkle SDK
+        run: |
+          set -euo pipefail
+          /bin/bash ci/airplay/fetch-sparkle.sh "$AIRPLAY_SPARKLE_ARCHIVE"
+
+      - name: Derive the public configuration from the existing definitive secret
+        env:
+          # Only this step receives the seed; its helper suppresses private tool output.
+          AIRPLAY_SPARKLE_PRIVATE_KEY: ${{ secrets.AIRPLAY_SPARKLE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          AP_PYTHON="$(/usr/bin/xcrun --find python3)"
+          "$AP_PYTHON" ci/airplay/configure-from-secret.py \
+            --sparkle-archive "$AIRPLAY_SPARKLE_ARCHIVE" \
+            --feed-url https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stable/appcast.xml \
+            --output "$AIRPLAY_PUBLIC_CONFIG_OUTPUT"
+
+      - name: Upload only the public XML plist
+        # actions/upload-artifact v7.0.2, verified official commit.
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: airplay-public-configuration-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.AIRPLAY_PUBLIC_CONFIG_OUTPUT }}
+          if-no-files-found: error
+          include-hidden-files: false
+          retention-days: 7

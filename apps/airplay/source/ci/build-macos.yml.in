@@ -1,0 +1,219 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# NOT AN ACTIVE RELEASE PIPELINE.
+# This inert template is intentionally outside .github/workflows.
+# Activation, public distribution and signing require a separate reviewed decision.
+# It never changes repository visibility, publishes a release or handles a private key.
+name: AirPlay macOS build preparation (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    # This guard runs before runner allocation, including in the current private repo.
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' &&
+          github.event.repository.private == false &&
+          github.event.repository.visibility == 'public' &&
+          vars.AIRPLAY_PUBLIC_CI_ENABLED == 'true' }}
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    env:
+      AIRPLAY_PUBLIC_CI_ENABLED: ${{ vars.AIRPLAY_PUBLIC_CI_ENABLED }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Read the selected public source revision
+        # actions/checkout v7.0.1, official tag resolved to this commit.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Validate the public update configuration
+        id: configure
+        env:
+          # A repository VARIABLE containing the XML plist, never an Actions secret.
+          # Required keys: SUFeedURL, SUPublicEDKey, SparkleKeychainAccount.
+          AIRPLAY_UPDATE_CONFIG_PLIST: ${{ vars.AIRPLAY_UPDATE_CONFIG_PLIST }}
+        run: |
+          set -euo pipefail
+          AP_PYTHON="$(/usr/bin/xcrun --find python3)"
+          "$AP_PYTHON" - <<'PY'
+          import os
+          from pathlib import Path
+          import plistlib
+          import subprocess
+          import sys
+          import tempfile
+
+          project = Path(os.environ['GITHUB_WORKSPACE']).resolve(strict=True)
+          for relative in ('config/local.env', 'updates/UpdateConfig.plist'):
+              candidate = project / relative
+              if candidate.exists() or candidate.is_symlink():
+                  raise SystemExit('CI refuses existing local configuration: ' + relative)
+          updates = project / 'updates'
+          if updates.is_symlink():
+              raise SystemExit('The updates directory may not be a symlink.')
+          raw = os.environ.get('AIRPLAY_UPDATE_CONFIG_PLIST', '')
+          if not raw.strip() or len(raw.encode('utf-8')) > 48 * 1024:
+              raise SystemExit('Set the real public AIRPLAY_UPDATE_CONFIG_PLIST repository variable first.')
+          config = plistlib.loads(raw.encode('utf-8'))
+          temporary = Path(os.environ['RUNNER_TEMP']).resolve(strict=True)
+          env_file = Path(os.environ['GITHUB_ENV']).resolve(strict=True)
+          env_file.relative_to(temporary)
+          job = Path(tempfile.mkdtemp(prefix='airplay-ci-', dir=str(temporary)))
+          proposed = job / 'UpdateConfig.plist'
+          with proposed.open('xb') as stream:
+              plistlib.dump(config, stream, fmt=plistlib.FMT_XML, sort_keys=True)
+          subprocess.run([sys.executable, str(project / 'scripts/update_release.py'),
+                          'validate-config', '--config', str(proposed)], check=True)
+          updates.mkdir(exist_ok=True)
+          with (updates / 'UpdateConfig.plist').open('xb') as stream:
+              stream.write(proposed.read_bytes())
+          paths = {'AIRPLAY_WORK_ROOT': job / 'work',
+                   'AIRPLAY_CI_ARTIFACT_DIR': job / 'artifacts'}
+          for path in paths.values():
+              path.mkdir()
+          with env_file.open('a', encoding='utf-8') as stream:
+              for key, value in paths.items():
+                  if '\n' in str(value) or '\r' in str(value):
+                      raise SystemExit('Unexpected newline in a runner path.')
+                  stream.write(key + '=' + str(value) + '\n')
+          print('Public feed/key syntax validated; no feed request or private-key operation was performed.')
+          PY
+
+      - name: Prepare the pinned Big Sur dependencies on this ephemeral runner
+        id: dependencies
+        run: |
+          set -euo pipefail
+          /bin/bash ci/prepare-macos-dependencies.sh 2>&1 | /usr/bin/tee "$AIRPLAY_CI_ARTIFACT_DIR/dependencies.log"
+
+      - name: Build and verify the bundle without installing it
+        id: build
+        run: |
+          set -euo pipefail
+          # No personal config, alternative source checkout or private signing key.
+          unset AIRPLAY_UPSTREAM_REPO AIRPLAY_SPARKLE_ARCHIVE AIRPLAY_ICON_FILE
+          /bin/bash scripts/build-install.sh --build-only 2>&1 | /usr/bin/tee "$AIRPLAY_CI_ARTIFACT_DIR/build-console.log"
+
+      - name: Collect only the prepared archive and this build's allowed logs
+        if: ${{ always() && steps.configure.outcome == 'success' }}
+        env:
+          AIRPLAY_CI_BUILD_OUTCOME: ${{ steps.build.outcome }}
+        run: |
+          set -euo pipefail
+          AP_PYTHON="$(/usr/bin/xcrun --find python3)"
+          "$AP_PYTHON" - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import plistlib
+          import re
+          import shutil
+
+          temporary = Path(os.environ['RUNNER_TEMP']).resolve(strict=True)
+          work = Path(os.environ['AIRPLAY_WORK_ROOT']).resolve(strict=True)
+          artifacts = Path(os.environ['AIRPLAY_CI_ARTIFACT_DIR']).resolve(strict=True)
+          work.relative_to(temporary)
+          artifacts.relative_to(temporary)
+          logs = artifacts / 'logs'
+          logs.mkdir()
+          candidates = list(work.glob('airplay-*'))
+          if len(candidates) > 1 or any(p.is_symlink() or not p.is_dir() for p in candidates):
+              raise SystemExit('Ambiguous build directory; no bundle was collected.')
+          build = candidates[0] if candidates else None
+
+          def safe_file(path, parent):
+              if path.is_symlink() or not path.is_file():
+                  raise SystemExit('Refusing an unexpected artifact file: ' + path.name)
+              path.resolve(strict=True).relative_to(parent.resolve(strict=True))
+              return path
+
+          # Explicit filenames only: no source tree, HOME, Keychain or recursive temp glob.
+          allowed_logs = (
+              'sesion.txt', 'preparacion.log', 'sistema.txt', 'codesign.log',
+              'runtime-check.log', 'ui-check.log', 'sparkle-check.log',
+              'dependencias.txt', 'load-commands.txt', 'rpaths.txt',
+              'enlaces-verificados.txt', 'upstream-sha256.txt',
+              'fuentes-sha256.txt', 'recursos-sha256.txt', 'dependencias-rutas.txt',
+          )
+          if build is not None:
+              build.resolve(strict=True).relative_to(work)
+              for name in allowed_logs:
+                  path = build / 'registros' / name
+                  if path.exists() or path.is_symlink():
+                      shutil.copyfile(safe_file(path, build), logs / name)
+
+          outcome = os.environ.get('AIRPLAY_CI_BUILD_OUTCOME', '')
+          if outcome == 'success':
+              reports = list(work.glob('airplay-*/paquete.noindex/preparacion.json'))
+              if build is None or len(reports) != 1:
+                  raise SystemExit('A successful build must produce exactly one preparation report.')
+              report_path = safe_file(reports[0], build)
+              report = json.loads(report_path.read_text(encoding='utf-8'))
+              expected = {
+                  'schema': 1, 'status': 'AWAITING_RELEASE_SIGNATURE_AND_PUBLICATION',
+                  'bundle_id': 'local.chevy.airplay', 'minimum_macos': '11.0',
+                  'upstream_commit': 'df67c212a433cf6dda3676dd40c097900d24e645',
+                  'external_gstreamer': '/Library/Frameworks/GStreamer.framework/Versions/1.0',
+                  'bundle_code_signature': 'ad-hoc',
+                  'bundle': str(build / 'bundle.noindex/AirPlay.app'),
+              }
+              if any(report.get(key) != value for key, value in expected.items()):
+                  raise SystemExit('The preparation report does not match the expected build.')
+              for key in ('archive_signed_ed25519', 'feed_access_verified', 'published', 'installed'):
+                  if report.get(key) is not False:
+                      raise SystemExit('Unexpected release/installation state: ' + key)
+              checks = {'bundle-signature', 'airplay-check', 'airplay-ui-check', 'archive-roundtrip'}
+              if set(report.get('checks', [])) != checks:
+                  raise SystemExit('The preparation checks are incomplete.')
+              config_path = Path(os.environ['GITHUB_WORKSPACE']) / 'updates/UpdateConfig.plist'
+              with config_path.open('rb') as stream:
+                  config = plistlib.load(stream)
+              if (report.get('feed_url') != config['SUFeedURL'] or
+                      report.get('public_ed25519_key') != config['SUPublicEDKey']):
+                  raise SystemExit('The bundle channel differs from the validated public variable.')
+              name = report.get('archive', '')
+              if not isinstance(name, str) or not re.fullmatch(r'AirPlay-[0-9]+(?:\.[0-9]+){1,2}-[1-9][0-9]*\.zip', name):
+                  raise SystemExit('Unexpected prepared archive name.')
+              if name != 'AirPlay-{}-{}.zip'.format(report.get('version'), report.get('build')):
+                  raise SystemExit('The archive name differs from the bundle version.')
+              archive = safe_file(report_path.parent / name, build)
+              digest = hashlib.sha256()
+              with archive.open('rb') as stream:
+                  for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                      digest.update(chunk)
+              if digest.hexdigest() != report.get('archive_sha256') or archive.stat().st_size != report.get('archive_bytes'):
+                  raise SystemExit('The prepared archive hash or byte count differs from its report.')
+              shutil.copyfile(archive, artifacts / name)
+              shutil.copyfile(report_path, artifacts / 'preparacion.json')
+          with (artifacts / 'ci-preparation.json').open('x', encoding='utf-8') as stream:
+              json.dump({'schema': 1, 'repository': os.environ['GITHUB_REPOSITORY'],
+                         'source_commit': os.environ['GITHUB_SHA'], 'build_outcome': outcome,
+                         'published': False, 'archive_signed_ed25519': False,
+                         'big_sur_runtime_tested': False}, stream, indent=2)
+              stream.write('\n')
+          with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a', encoding='utf-8') as stream:
+              stream.write('## AirPlay build preparation\n\n'
+                           'NOT AN ACTIVE RELEASE PIPELINE. No update was published or signed with EdDSA. '
+                           'The artifact is a preparation bundle and allowed build logs only. '
+                           'Execution on Big Sur still requires validation on a Big Sur Mac.\n')
+          PY
+
+      - name: Upload the curated preparation artifact
+        if: ${{ always() && steps.configure.outcome == 'success' }}
+        # actions/upload-artifact v7.0.2, official tag resolved to this commit.
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: airplay-preparation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.AIRPLAY_CI_ARTIFACT_DIR }}/
+          if-no-files-found: error
+          include-hidden-files: false
+          retention-days: 7
+          compression-level: 0

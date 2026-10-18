@@ -1,0 +1,39 @@
+{
+  "app_version": "1.1",
+  "build": "2",
+  "historical_installer_sha256": "fcfcc2960faf26c4ce41d3b49821bfbf5a403e02cdb2d87b0a371d74a44cd11f",
+  "upstream_commit": "df67c212a433cf6dda3676dd40c097900d24e645",
+  "rtp_sha256": "703ab8eca9eaf9723c9369a68cf21ac00a11c02a79f3a56703ad708588ebc66f",
+  "receiver_configuration_sha256": "dd7b56beb493a0a04d746f0a1d57d723344efc9f6475d418d73ddbff6ba1b7d8",
+  "sources": [
+    {
+      "path": "CMakeLists.txt",
+      "sha256": "5621ac4953da7d127d06f954fdb4f742d4a2a9f6dc14dd7f1856db7882edff6c"
+    },
+    {
+      "path": "renderers/CMakeLists.txt",
+      "sha256": "e65889f36f241f6efcf3e82f37c8c396b3963ef06807355a8e2e7bd63a2f087c"
+    },
+    {
+      "path": "uxplay.cpp",
+      "sha256": "9cc80ffee53e981cacbcfa33100bf08423b205c09b0cb82002f630304febbd6b"
+    },
+    {
+      "path": "app_controller.h",
+      "sha256": "0f834912deac2a82d1c06074e25269c2a9f5461030bdbd3fd49fdfe7ca7cf817"
+    },
+    {
+      "path": "app_controller.mm",
+      "sha256": "1effd9f11a7e0f87d4796d1d05c95c9894c0ef923b4bd56bb9db19ba0e06a63b"
+    },
+    {
+      "path": "renderers/macos_airplay_window.h",
+      "sha256": "0efdff71845d38f29dd73da49e8b849682c31284782e5fb31fb9520d1b65bcdf"
+    },
+    {
+      "path": "renderers/macos_airplay_window.mm",
+      "sha256": "f0fb7c6883c395246deb74150251847bbe849fc9c378e560a8fb5f07c4e39790"
+    }
+  ],
+  "note": "Provenance of a local prototype; no historical Git commits or authors are synthesized."
+}

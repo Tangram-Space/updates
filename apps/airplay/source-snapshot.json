@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "snapshot_kind": "source_files_without_git_history",
+  "version": "1.3.2",
+  "build": "6",
+  "source_directory": "source",
+  "source_file_count": 69,
+  "source_manifest": "source/manifests/project.sha256",
+  "source_manifest_sha256": "13ef7dc30e6f395377d9d0511614d41a03866acd87f9ec9ce1667eeb3b2a3450",
+  "upstream_repository": "https://github.com/FDH2/UxPlay.git",
+  "upstream_commit": "df67c212a433cf6dda3676dd40c097900d24e645",
+  "copied_source_bytes_modified": false
+}

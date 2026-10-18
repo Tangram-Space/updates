@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "app_id": "airplay",
+  "name": "AirPlay",
+  "bundle_identifier": "local.chevy.airplay",
+  "platform": {
+    "os": "macOS",
+    "minimum_version": "11.0",
+    "architectures": [
+      "x86_64"
+    ]
+  },
+  "source": {
+    "directory": "source",
+    "version": "1.3.2",
+    "build": "6",
+    "license": "GPL-3.0-or-later"
+  },
+  "update_channel": {
+    "engine": "Sparkle",
+    "engine_version": "2.9.6",
+    "status": "awaiting_first_signed_release",
+    "appcast_path": "feeds/airplay/stable/appcast.xml",
+    "feed_url": null,
+    "public_ed25519_key": null,
+    "latest_release": null
+  },
+  "verification": {
+    "anonymous_availability_verified": false,
+    "macos_update_test_performed": false
+  }
+}

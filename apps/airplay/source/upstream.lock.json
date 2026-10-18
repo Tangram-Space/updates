@@ -1,0 +1,35 @@
+{
+  "repository": "https://github.com/FDH2/UxPlay.git",
+  "tag": "v1.73.7",
+  "commit": "df67c212a433cf6dda3676dd40c097900d24e645",
+  "overlay_baseline_sha256": [
+    {
+      "path": "CMakeLists.txt",
+      "sha256": "ff6634e2656d49469c809f490318f7f6a5b5f977c2473df22f8a155202607f0e"
+    },
+    {
+      "path": "renderers/CMakeLists.txt",
+      "sha256": "47166bf64b01365e1169841194695e01c2c95c2be0f0d42c659499fd6575d906"
+    },
+    {
+      "path": "renderers/video_renderer.c",
+      "sha256": "78c44defa6d88800f841c0709e89dd668cf3ce8a39d6a3b2faf77daae9083699"
+    },
+    {
+      "path": "renderers/audio_renderer.c",
+      "sha256": "9a2f11324988a1cff26e6f19ffe814463d1fe0a570301d673144c74fefa5e51c"
+    },
+    {
+      "path": "renderers/audio_renderer.h",
+      "sha256": "ad1814a85281235b7af74afe24d86db698ef3bfb6c461552fdbd1b3a1fe0787f"
+    },
+    {
+      "path": "uxplay.cpp",
+      "sha256": "651186ec4b5a159a34a6bac447cda5eb1a00027b5c4aebee063f8bd4bb6dfd6d"
+    },
+    {
+      "path": "lib/raop_rtp.c",
+      "sha256": "d446108c9a93071679326a2019dae8aa4843773c5702d819fb989693b41d8eb1"
+    }
+  ]
+}
