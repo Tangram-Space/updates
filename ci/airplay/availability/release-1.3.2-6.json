@@ -1,0 +1,13 @@
+{
+  "bundle_id": "local.chevy.airplay",
+  "version": "1.3.2",
+  "build": "6",
+  "feed_url": "https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stable/appcast.xml",
+  "download_url": "https://github.com/Tangram-Space/updates/releases/download/airplay-v1.3.2-b6/AirPlay-1.3.2-6.zip",
+  "archive": "AirPlay-1.3.2-6.zip",
+  "archive_sha256": "493d3e0a62e6c1e7258acf5fae4c89e5552210ef3b4b1d1a65a9c6eb08301c96",
+  "archive_bytes": 3498880,
+  "appcast_sha256": "0b751a82321e7151e00de84abda38048cfe86b0f0d9931f92493f9a2d41eb458",
+  "sparkle_version": "2.9.6",
+  "published": false
+}
