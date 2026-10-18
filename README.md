@@ -1,6 +1,6 @@
 # Tangram Updates
 
-Repositorio público de fuentes y distribución [Tangram-Space/updates](https://github.com/Tangram-Space/updates), compartido por aplicación. AirPlay es la primera incorporación: **1.3.2, build 6**, para macOS 11 o posterior en Intel. La compilación de CI, la primera release firmada y la validación del canal de actualizaciones están pendientes.
+Repositorio público de fuentes y distribución [Tangram-Space/updates](https://github.com/Tangram-Space/updates), compartido por aplicación. AirPlay es la primera incorporación: **1.3.2, build 6**, para macOS 11 o posterior en Intel. La clave de firma está provisionada y los workflows manuales están activos. La compilación de CI, la primera release firmada y la validación del canal de actualizaciones están pendientes.
 
 ## Contenido
 
@@ -9,7 +9,7 @@ Repositorio público de fuentes y distribución [Tangram-Space/updates](https://
 | [apps/airplay/source/](apps/airplay/source/) | Los 69 archivos exactos del proyecto preparado: modificaciones de UxPlay, recursos, construcción, verificadores, manifiestos y licencias. |
 | [apps/airplay/source-snapshot.json](apps/airplay/source-snapshot.json) | Identidad y comprobación del snapshot, sin importar el historial privado de desarrollo. |
 | [ci/airplay/](ci/airplay/) | Dependencias fijadas, configuración pública, firma y recolección acotada de artefactos. |
-| `.github/workflows/*.yml.in` | Dos plantillas manuales **inactivas**; conservar `.in` hasta la activación revisada. |
+| `.github/workflows/*.yml` | Dos workflows **manuales** activos después de provisionar la firma; no publican Releases ni modifican el feed. |
 | [apps/airplay/channel.json](apps/airplay/channel.json) | Estado del canal; los valores pendientes deben completarse con resultados reales. |
 
 ## Preparar y publicar la primera versión
@@ -18,7 +18,7 @@ Repositorio público de fuentes y distribución [Tangram-Space/updates](https://
 
 2. **Preparar la firma una sola vez en el Mac Intel.** Ejecutar [Preparar_Firma_AirPlay.command](ci/airplay/Preparar_Firma_AirPlay.command) con el usuario habitual. Descarga Sparkle 2.9.6 con SHA256 y firmas comprobados; crea o reutiliza la cuenta `local.chevy.airplay` del Llavero y copia su export privado al portapapeles sin mostrarlo. El usuario lo pega personalmente en el Actions Secret `AIRPLAY_SPARKLE_PRIVATE_KEY` de este repositorio y vuelve a Terminal para presionar Enter: se eliminan la copia temporal y el contenido del portapapeles si sigue siendo esa clave. El original permanece en el Llavero. Nunca pegar la privada en el chat, el repositorio o un artefacto. El comando sólo prepara la firma y no instala ni modifica AirPlay. Los helpers de CI no generan ni rotan claves; [su documentación](ci/airplay/README.md) describe la importación temporal y la firma oficial por stdin.
 
-3. **Activar las plantillas sólo en ese repositorio público revisado:** renombrar `airplay-public-key.yml.in` y `airplay-build.yml.in` a `.yml`, y establecer la variable de repositorio `AIRPLAY_PUBLIC_CI_ENABLED` en `true`. Ejecutar manualmente el workflow de configuración pública. Su artefacto contiene únicamente `UpdateConfig.plist`, derivado de la clave existente. Guardar el XML completo como variable pública `AIRPLAY_UPDATE_CONFIG_PLIST`; no es un secreto.
+3. **Obtener la configuración pública.** Los workflows `airplay-public-key.yml` y `airplay-build.yml` están activados en este repositorio público revisado y la variable `AIRPLAY_PUBLIC_CI_ENABLED` está en `true`. Ejecutar manualmente el workflow de configuración pública. Su artefacto contiene únicamente `UpdateConfig.plist`, derivado de la clave existente. Guardar el XML completo como variable pública `AIRPLAY_UPDATE_CONFIG_PLIST`; no es un secreto.
 
 4. **Ejecutar manualmente la preparación firmada.** Comprueba que la clave coincide antes de compilar, ejecuta las verificaciones del bundle y de AppKit, y firma y verifica el ZIP y el appcast con Sparkle 2.9.6. El artefacto contiene `release/` con los archivos finales y sus informes. El workflow no crea Releases, no cambia el feed ni instala AirPlay.
 

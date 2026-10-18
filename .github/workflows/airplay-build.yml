@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# NOT AN ACTIVE RELEASE PIPELINE.
-# Shared-repository candidate: keep the .in suffix until activation is reviewed.
-# Rename to .yml only in the reviewed PUBLIC updates repository after key provisioning.
+# Manual preparation workflow, activated in the reviewed public repository
+# after the definitive signing secret was provisioned.
 # Manual build + signature verification only: no release publication or feed commit.
 name: AirPlay signed macOS preparation (shared repository)
 

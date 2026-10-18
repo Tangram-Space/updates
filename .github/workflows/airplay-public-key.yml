@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# INACTIVE TEMPLATE. This does not create or rotate any private key.
-# Rename only inside the reviewed public repository after secret provisioning.
+# Manual public-repository workflow, activated after secret provisioning.
+# This does not create or rotate any private key.
 name: AirPlay public key configuration (existing secret)
 
 on:
