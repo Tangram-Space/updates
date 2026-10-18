@@ -358,6 +358,21 @@ AIRPLAY_SOURCE_MANIFEST
 printf '\n2/4 - Compilando AirPlay\n'
 printf 'Esto puede tardar unos minutos.\n'
 UX_PHASE="compilacion"
+# Upstream CMake prepends Homebrew paths even when PKG_CONFIG_LIBDIR is set.
+# Clear that search path for every query so headers match our static libraries.
+UX_PKG_ISOLATED="$UX_WORK/pkg-config-isolated"
+"$UX_PYTHON" - "$UX_PKG_ISOLATED" "$UX_PKG" "$UX_PREFIX/lib/pkgconfig:$UX_GST/lib/pkgconfig" <<'AIRPLAY_PKG_CONFIG_WRAPPER'
+from pathlib import Path
+import shlex
+import sys
+
+wrapper = Path(sys.argv[1])
+wrapper.write_text('#!/bin/bash\nset -eu\nexec /usr/bin/env PKG_CONFIG_PATH= PKG_CONFIG_LIBDIR=' +
+                   shlex.quote(sys.argv[3]) + ' ' + shlex.quote(sys.argv[2]) + ' "$@"\n', encoding='utf-8')
+wrapper.chmod(0o700)
+AIRPLAY_PKG_CONFIG_WRAPPER
+[ "$?" -eq 0 ] || ux_fail "No se pudo aislar la seleccion de dependencias."
+ux_run "$UX_PKG_ISOLATED" --modversion openssl libplist-2.0 gstreamer-1.0
 ux_run /usr/bin/env PKG_CONFIG_LIBDIR="$UX_PREFIX/lib/pkgconfig:$UX_GST/lib/pkgconfig" \
   "$UX_CMAKE" -S "$UX_SRC" -B "$UX_BUILD" \
     -DCMAKE_BUILD_TYPE=Release \
@@ -369,7 +384,7 @@ ux_run /usr/bin/env PKG_CONFIG_LIBDIR="$UX_PREFIX/lib/pkgconfig:$UX_GST/lib/pkgc
     -DCMAKE_CXX_COMPILER="$UX_CXX" \
     -DCMAKE_OBJCXX_COMPILER="$UX_CXX" \
     -DCMAKE_PREFIX_PATH="$UX_PREFIX;$UX_GST" \
-    -DPKG_CONFIG_EXECUTABLE="$UX_PKG" \
+    -DPKG_CONFIG_EXECUTABLE="$UX_PKG_ISOLATED" \
     -DLIBPLIST="$UX_PREFIX/lib/libplist-2.0.a" \
     -DLIBCRYPTO="$UX_GST/lib/libcrypto.a" \
     -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \

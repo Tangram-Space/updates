@@ -6,7 +6,7 @@ Repositorio público de fuentes y distribución [Tangram-Space/updates](https://
 
 | Ruta | Función |
 | --- | --- |
-| [apps/airplay/source/](apps/airplay/source/) | Los 69 archivos exactos del proyecto preparado: modificaciones de UxPlay, recursos, construcción, verificadores, manifiestos y licencias. |
+| [apps/airplay/source/](apps/airplay/source/) | Los 69 archivos del proyecto preparado: modificaciones de UxPlay, recursos, construcción, verificadores, manifiestos y licencias. La selección de dependencias se aísla de Homebrew para mantener coherentes las cabeceras y bibliotecas del SDK. |
 | [apps/airplay/source-snapshot.json](apps/airplay/source-snapshot.json) | Identidad y comprobación del snapshot, sin importar el historial privado de desarrollo. |
 | [ci/airplay/](ci/airplay/) | Dependencias fijadas, configuración pública, firma y recolección acotada de artefactos. |
 | `.github/workflows/*.yml` | Dos workflows **manuales** activos después de provisionar la firma; no publican Releases ni modifican el feed. |

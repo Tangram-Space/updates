@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-3.0-or-later
 # CI preparation only: this script refuses local and self-hosted execution.
-# The companion workflow is INACTIVE while it keeps its .yml.in suffix.
+# The companion workflow requires an explicitly enabled manual public CI run.
 # These are the same release bytes used by the Big Sur R2 installer.
 set -euo pipefail
 umask 077
@@ -108,6 +108,9 @@ AP_CI_PKG="$AP_CI_GST/bin/pkg-config"
   [ -f "$AP_CI_GST/lib/libcrypto.a" ] || ap_ci_fail "The installed runtime/SDK is incomplete."
 [ "$(PKG_CONFIG_PATH= PKG_CONFIG_LIBDIR="$AP_CI_GST/lib/pkgconfig" "$AP_CI_PKG" --modversion gstreamer-1.0)" = 1.28.8 ] ||
   ap_ci_fail "Unexpected GStreamer version."
+[ "$(PKG_CONFIG_PATH= PKG_CONFIG_LIBDIR="$AP_CI_GST/lib/pkgconfig" "$AP_CI_PKG" --modversion openssl)" = 3.5.0 ] ||
+  ap_ci_fail "The pinned GStreamer SDK must provide OpenSSL 3.5.0."
+printf 'Pinned SDK: GStreamer 1.28.8; OpenSSL 3.5.0 (headers and static library).\n'
 
 /usr/bin/tar -xzf "$AP_CI_CMAKE_ARCHIVE" -C "$AP_CI_ROOT/tools.noindex"
 AP_CI_CMAKE="$AP_CI_ROOT/tools.noindex/cmake-3.31.12-macos-universal/CMake.app/Contents/bin/cmake"
