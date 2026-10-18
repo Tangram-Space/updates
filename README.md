@@ -1,6 +1,6 @@
 # Tangram Updates
 
-Repositorio público de fuentes y distribución [Tangram-Space/updates](https://github.com/Tangram-Space/updates), compartido por aplicación. AirPlay es la primera incorporación: **1.3.2, build 6**, para macOS 11 o posterior en Intel. La [primera release firmada](https://github.com/Tangram-Space/updates/releases/tag/airplay-v1.3.2-b6) y sus fuentes están publicadas. La [compilación nativa corregida](https://github.com/Tangram-Space/updates/actions/runs/39171983875) pasó las verificaciones del bundle, Preferencias y firmas. La comprobación anónima del canal y la prueba de instalación de Sparkle están en curso.
+Repositorio público de fuentes y distribución [Tangram-Space/updates](https://github.com/Tangram-Space/updates), compartido por aplicación. AirPlay es la primera incorporación: **1.3.2, build 6**, para macOS 11 o posterior en Intel. La [primera release firmada](https://github.com/Tangram-Space/updates/releases/tag/airplay-v1.3.2-b6) y sus fuentes están publicadas. La [compilación nativa corregida](https://github.com/Tangram-Space/updates/actions/runs/39171983875) pasó las verificaciones del bundle, Preferencias y firmas. La comprobación anónima del canal y la instalación y reapertura reales con Sparkle también pasaron; los [informes de la versión](apps/airplay/verification/1.3.2-6/) conservan la evidencia y el alcance.
 
 ## Contenido
 
@@ -30,7 +30,7 @@ La dirección estable del feed es:
 https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stable/appcast.xml
 ```
 
-Antes de entregar la instalación inicial, ejecutar `apps/airplay/source/scripts/verify-published-release.py --release-dir <carpeta-release>` para comprobar descargas anónimas e integridad. El [smoke de Sparkle](ci/airplay/update-smoke/README.md) comprueba la transición desde una aplicación de prueba A a la release B real y su reapertura. Se ejecuta en macOS 15 Intel; no sustituye la comprobación de streaming, interfaz del actualizador o ejecución en el iMac con Big Sur.
+Antes de entregar la instalación inicial, ejecutar `apps/airplay/source/scripts/verify-published-release.py --release-dir <carpeta-release>` para comprobar descargas anónimas e integridad. El [smoke de Sparkle](ci/airplay/update-smoke/README.md) comprueba la transición desde una aplicación de prueba A a la release B real y su reapertura. La [prueba 39174335348](https://github.com/Tangram-Space/updates/actions/runs/39174335348) pasó en macOS 15.7.9 Intel. A era una aplicación de prueba aislada y B fue el paquete real publicado. La comprobación de streaming, del diálogo estándar del actualizador y de ejecución en el iMac con Big Sur queda fuera de ese ensayo.
 
 ## Licencias
 

@@ -20,7 +20,7 @@
   "update_channel": {
     "engine": "Sparkle",
     "engine_version": "2.9.6",
-    "status": "published_awaiting_validation",
+    "status": "active",
     "appcast_path": "feeds/airplay/stable/appcast.xml",
     "feed_url": "https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stable/appcast.xml",
     "public_ed25519_key": "i8eQAeVM6gqQ7M7YeAlnGqSZQ0Wn8321shPPPdafH7A=",
@@ -38,12 +38,20 @@
     }
   },
   "verification": {
-    "anonymous_availability_verified": false,
-    "macos_update_test_performed": false,
+    "anonymous_availability_verified": true,
+    "macos_update_test_performed": true,
     "native_build_run_id": 39171983875,
     "native_build_passed": true,
     "archive_signature_verified": true,
     "appcast_signature_verified": true,
-    "big_sur_runtime_tested": false
+    "big_sur_runtime_tested": false,
+    "availability_run_id": 39174715466,
+    "sparkle_update_run_id": 39174335348,
+    "sparkle_test_macos": "15.7.9",
+    "sparkle_test_architecture": "x86_64",
+    "sparkle_test_uses_synthetic_source_app": true,
+    "actual_airplay_updater_ui_tested": false,
+    "streaming_tested_in_ci": false,
+    "reports_directory": "verification/1.3.2-6"
   }
 }

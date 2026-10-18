@@ -1,0 +1,27 @@
+{
+  "archive": {
+    "bytes": 3498880,
+    "bytes_match_local": true,
+    "redirects_followed": 1,
+    "sha256": "493d3e0a62e6c1e7258acf5fae4c89e5552210ef3b4b1d1a65a9c6eb08301c96",
+    "url": "https://github.com/Tangram-Space/updates/releases/download/airplay-v1.3.2-b6/AirPlay-1.3.2-6.zip"
+  },
+  "artifacts_modified": false,
+  "availability_verified": true,
+  "build": "6",
+  "bundle_id": "local.chevy.airplay",
+  "enclosure_ed_signature": "PshSTMGNpRHyfbty+2AOa5QCiloTjwqDJS6ctJ7MFjjfX8kd7GaeOBqFnKynyGj2crxPpPFcXO4gevmExhCkBg==",
+  "enclosure_signature_matches_local_appcast": true,
+  "feed": {
+    "bytes": 1200,
+    "bytes_match_local": true,
+    "redirects_followed": 0,
+    "sha256": "0b751a82321e7151e00de84abda38048cfe86b0f0d9931f92493f9a2d41eb458",
+    "url": "https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stable/appcast.xml"
+  },
+  "independent_signature_verification_performed": false,
+  "macos_update_test_performed": false,
+  "reference_requirement": "Local artifacts must already have passed make-release signing and verification on macOS; this check does not replace Sparkle EdDSA verification.",
+  "verification_scope": "Unauthenticated HTTPS availability and exact equality to the locally verified release, from this machine at check time.",
+  "version": "1.3.2"
+}
