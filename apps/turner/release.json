@@ -3,7 +3,7 @@
   "app_id": "turner",
   "channel": "stable",
   "source_repo": "Chevosky/tuner-compact",
-  "source_sha": "f386c0182c30f2d8cd5dd6b036b7712d7987c861",
+  "source_sha": "544d6eec85f1c1ae787f74e0545cf38699a5d7af",
   "version": "0.1.13",
-  "revision": 4
+  "revision": 5
 }
