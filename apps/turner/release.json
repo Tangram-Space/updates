@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "app_id": "turner",
+  "channel": "stable",
+  "source_repo": "Chevosky/tuner-compact",
+  "source_sha": "f386c0182c30f2d8cd5dd6b036b7712d7987c861",
+  "version": "0.1.13",
+  "revision": 4
+}

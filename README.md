@@ -9,10 +9,13 @@ Repositorio público de fuentes y distribución [Tangram-Space/updates](https://
 | [apps/airplay/source/](apps/airplay/source/) | Los 69 archivos del proyecto preparado: modificaciones de UxPlay, recursos, construcción, verificadores, manifiestos y licencias. La selección de dependencias se aísla de Homebrew para mantener coherentes las cabeceras y bibliotecas del SDK. |
 | [apps/airplay/source-snapshot.json](apps/airplay/source-snapshot.json) | Identidad y comprobación del snapshot, sin importar el historial privado de desarrollo. |
 | [ci/airplay/](ci/airplay/) | Dependencias fijadas, configuración pública, firma y recolección acotada de artefactos. |
-| `.github/workflows/*.yml` | Cuatro workflows **manuales**: configuración pública, compilación firmada, comprobación anónima y prueba real de instalación con Sparkle. No publican Releases ni modifican el feed. |
+| `.github/workflows/airplay-*.yml` | Cuatro workflows **manuales** de AirPlay: configuración pública, compilación firmada, comprobación anónima y prueba real de instalación con Sparkle. No publican Releases ni modifican el feed. |
 | [apps/airplay/channel.json](apps/airplay/channel.json) | Identidad de la release publicada, clave pública y estado comprobado del canal. |
+| [apps/turner/](apps/turner/) | Canal de Turner y solicitud de versión con el commit exacto del repositorio público de fuentes. |
+| [.github/workflows/turner-build.yml](.github/workflows/turner-build.yml) | Pruebas, compilación Intel y publicación de Turner; avanza sólo su propio feed cuando los archivos están completos. |
+| [feeds/turner/stable/release.json](feeds/turner/stable/release.json) | Puntero estable de Turner, idéntico al manifiesto de su release. |
 
-## Preparar y publicar versiones
+## Preparar y publicar AirPlay
 
 1. **Publicar las fuentes revisadas** en `main` del repositorio público `Tangram-Space/updates`. Las plantillas rechazan otro repositorio, una rama distinta o un destino privado. La construcción usa un runner Intel y no modifica la app instalada en ningún Mac personal.
 
@@ -32,6 +35,42 @@ https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stabl
 
 Antes de entregar la instalación inicial, ejecutar `apps/airplay/source/scripts/verify-published-release.py --release-dir <carpeta-release>` para comprobar descargas anónimas e integridad. El [smoke de Sparkle](ci/airplay/update-smoke/README.md) comprueba la transición desde una aplicación de prueba A a la release B real y su reapertura. La [prueba 39174335348](https://github.com/Tangram-Space/updates/actions/runs/39174335348) pasó en macOS 15.7.9 Intel. A era una aplicación de prueba aislada y B fue el paquete real publicado. La comprobación de streaming, del diálogo estándar del actualizador y de ejecución en el iMac con Big Sur queda fuera de ese ensayo.
 
+## Preparar y publicar Turner
+
+Turner es el afinador antes llamado Tuner Compact. Sus fuentes permanecen en
+[Chevosky/tuner-compact](https://github.com/Chevosky/tuner-compact), rama
+`compact-intel`. Comparte este repositorio de distribución con AirPlay y usa
+su propio canal:
+
+```text
+https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/turner/stable/release.json
+```
+
+Para preparar una versión, publicar primero el código y aumentar su revisión.
+Después actualizar [apps/turner/release.json](apps/turner/release.json) con el
+SHA completo del commit público, su versión y revisión. El workflow de Turner
+valida la solicitud, prueba y compila ese commit en un runner macOS Intel
+estándar, con permisos de sólo lectura durante la construcción. Un job
+separado publica el ZIP, su SHA-256 y `turner-update.json` en un tag
+`turner-vVERSION-rREVISION`. Sólo después de verificar los archivos completos
+publica los mismos bytes del manifiesto en el feed. Las releases existentes
+no se sobrescriben y las de Turner no cambian la selección global de latest.
+
+El cliente consulta el feed de Turner y la release indicada por su tag exacto;
+rechaza otros identificadores de aplicación, canales y paquetes. El código
+de construcción y su plantilla de workflow están en el commit de fuentes
+fijado por la solicitud. [Detalles del canal y de la migración desde r3](apps/turner/README.md).
+
+Turner conserva un actualizador propio con comprobaciones de identidad,
+integridad y compatibilidad. No usa las claves ni la configuración de Sparkle
+de AirPlay. Su comprobación HTTPS/SHA-256 confía en este repositorio; no es una
+firma independiente del editor ni notarización de Apple.
+
 ## Licencias
 
 AirPlay se basa en UxPlay bajo **GPL-3.0-or-later**. Conservar la [licencia principal](apps/airplay/source/LICENSE), los [avisos de terceros](apps/airplay/source/THIRD_PARTY.md) y sus [textos completos](apps/airplay/source/licenses/) junto con las fuentes de cada versión distribuida.
+
+Turner se basa en [themoretheless/tuner](https://github.com/themoretheless/tuner)
+bajo **MIT** y conserva CPAL bajo **Apache-2.0**. Ambos textos se incluyen en
+el bundle distribuido; las fuentes y el backport acotado de CPAL permanecen
+en su repositorio público y commit de versión.
