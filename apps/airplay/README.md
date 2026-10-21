@@ -1,28 +1,36 @@
 # AirPlay
 
-Receptor de audio y duplicación de pantalla para **macOS 11 o posterior, Intel x86_64**, basado en UxPlay 1.73.7. La versión de fuentes preparada aquí es **1.3.2, build 6**.
+Receptor de audio y duplicación de pantalla para **macOS 11 o posterior, Intel x86_64**, basado en UxPlay 1.73.7.
 
-## Fuentes y procedencia
+## Versiones y estado
 
-- [source/](source/): los 69 archivos del proyecto de construcción, copiados sin modificaciones y sin historial Git.
-- [source-snapshot.json](source-snapshot.json): identificación de la versión, commit de UxPlay y SHA-256 del manifiesto del snapshot.
-- [Instrucciones del proyecto](source/README.md): requisitos, construcción, controles nativos e instalación de mantenimiento.
-- [Preparación y firma de actualizaciones](source/docs/UPDATES.md): configuración pública del canal y herramientas de firma.
+- [channel.json](channel.json) identifica la **última release publicada** y su feed firmado.
+- [source/version.env](source/version.env) identifica la revisión de fuentes que se está preparando. La publicación del canal se realiza únicamente después de compilar, firmar y comprobar el paquete correspondiente.
+- La release **1.3.2/build 6** activó el canal. El usuario confirmó la instalación inicial en Big Sur y la consulta satisfactoria de actualizaciones desde AirPlay.
+- Los [informes por versión](verification/) distinguen compilación, firmas, disponibilidad pública, pruebas nativas y sus límites. La ejecución en un runner Intel no sustituye la prueba de reposo/reproducción en el iMac.
 
-Las referencias del README interno al repositorio de desarrollo y a los prototipos conservan el contexto del proyecto. El snapshot público se encuentra en esta carpeta. Las dependencias y herramientas se obtienen desde las versiones y orígenes fijados por los scripts; no se incluyen sus ejecutables en Git.
+## Uso del actualizador
 
-## Canal de actualizaciones
+**Buscar actualizaciones**, dentro de Preferencias, consulta el canal y abre la interfaz de Sparkle. En 1.3.3 se añade **Buscar actualizaciones automáticamente**, desactivada inicialmente. Al activarla, Sparkle programa consultas cada 24 horas; las versiones disponibles aparecen en el menú y en Preferencias sin abrir avisos sobre la reproducción. La descarga y la instalación siguen dependiendo de una elección del usuario.
 
-[channel.json](channel.json) registra un canal **pendiente de publicación y prueba**. `feeds/airplay/stable/appcast.xml` es la ruta prevista para el feed real; ese archivo se incorpora únicamente cuando se haya generado y verificado su firma. La URL del feed, la clave pública y los datos de la primera release todavía no están configurados en esta descripción.
+El feed estable es:
 
-Después de preparar y publicar una release firmada, se comprueba su disponibilidad desde la carpeta de fuentes:
-
-```bash
-xcrun python3 scripts/verify-published-release.py --release-dir "$RELEASE_DIR"
+```
+https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stable/appcast.xml
 ```
 
-Ese control compara las descargas anónimas con los archivos firmados locales. Informa por separado que no realizó una actualización dentro de macOS y no sustituye la validación EdDSA de Sparkle. La candidata no se presenta como una actualización terminada hasta completar también la prueba desde la app.
+Las claves y el feed de AirPlay son independientes de los demás productos de este repositorio.
+
+## Fuentes y mantenimiento
+
+- [source/](source/): código, recursos, scripts, manifiestos y licencias del proyecto.
+- [source-snapshot.json](source-snapshot.json): identidad, procedencia y manifiesto de la revisión de fuentes.
+- [Instrucciones del proyecto](source/README.md): requisitos y construcción.
+- [Actualizaciones](source/docs/UPDATES.md): configuración, comportamiento y preparación/publicación.
+- [CI](../../ci/airplay/README.md): construcción y firma con la configuración existente.
+
+Las fuentes correspondientes y sus dependencias se adjuntan a cada release. Los informes conservan hashes, versiones y procedencia, sin incluir la clave privada. El identificador `local.chevy.airplay` se mantiene para preservar preferencias e identidad.
 
 ## Licencias
 
-Se conservan [LICENSE](source/LICENSE), [THIRD_PARTY.md](source/THIRD_PARTY.md) y todos los archivos de [licenses/](source/licenses/), además de los avisos originales en las fuentes. El identificador `local.chevy.airplay` se mantiene para preservar la identidad y las preferencias de las instalaciones existentes.
+Se conservan [LICENSE](source/LICENSE), [THIRD_PARTY.md](source/THIRD_PARTY.md) y los textos de [licenses/](source/licenses/), además de los avisos originales en las fuentes.

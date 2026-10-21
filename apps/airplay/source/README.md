@@ -2,7 +2,9 @@
 
 AirPlay es una aplicación de barra de menús para recibir audio y duplicación de pantalla mediante [UxPlay](https://github.com/FDH2/UxPlay). Añade una interfaz nativa de AppKit, una ventana de vídeo que recuerda su geometría y un control de volumen propio. El receptor se ejecuta en el mismo proceso que la aplicación; después de instalarla, se abre desde Aplicaciones y no necesita una Terminal abierta.
 
-La versión preparada en este árbol es **1.3.2, build 6**, destinada a **macOS 11 Big Sur en Intel x86_64**. Se basa en UxPlay **1.73.7**, commit `df67c212a433cf6dda3676dd40c097900d24e645`. El repositorio del proyecto es [Tangram-Space/airplay](https://github.com/Tangram-Space/airplay), privado y con `main` como rama principal. Esta candidata todavía no tiene una release ni un canal de actualizaciones operativo. Su entrega queda pendiente de completar la publicación firmada y probar una actualización desde la app; el trabajo se detalla en [docs/RELEASE_PLAN.md](docs/RELEASE_PLAN.md).
+La versión de este árbol es **1.3.3, build 7**, destinada a **macOS 11 Big Sur en Intel x86_64**. Se basa en UxPlay **1.73.7**, commit `df67c212a433cf6dda3676dd40c097900d24e645`. Las fuentes y la distribución pública están en [Tangram-Space/updates](https://github.com/Tangram-Space/updates/tree/main/apps/airplay). El [canal estable](../channel.json) identifica exclusivamente la última versión publicada; no debe confundirse una candidata de código con una release disponible.
+
+La versión anterior **1.3.2/build 6** fue publicada, instalada por el usuario en Big Sur y comprobó el canal desde la app. Sus pruebas nativas de compilación, firmas, descarga e instalación/reapertura con Sparkle están en [verification/1.3.2-6](../verification/1.3.2-6/). La prueba de instalación partió de una app A de prueba en macOS 15.7.9 Intel; no acredita por sí misma una transición de versiones en el iMac.
 
 ## Uso
 
@@ -10,7 +12,9 @@ Al abrir AirPlay aparece un acceso en la barra de menús. El nombre anunciado al
 
 - **Clic izquierdo, con una fuente conectada:** abre el panel compacto de volumen de AirPlay, con pista de cápsula, porcentaje y un pequeño parlante de silencio en la cabecera. Este control es independiente del volumen de macOS y conserva su ajuste entre aperturas. Moverlo a un valor positivo desactiva el silencio.
 - **Clic derecho o Control-clic:** abre el menú con el estado del receptor, Mostrar ventana, Preferencias y Salir.
-- **Preferencias:** permite cambiar el nombre anunciado, elegir Abrir al iniciar sesión, abrir los registros y consultar el estado de las actualizaciones. Buscar actualizaciones aparece a la derecha de la versión, con el estado debajo. El cambio de nombre se aplica al volver a abrir la app.
+- **Preferencias:** permite cambiar el nombre anunciado, elegir Abrir al iniciar sesión, abrir los registros, buscar actualizaciones y activar su búsqueda automática opcional. Buscar actualizaciones aparece a la derecha de la versión, con el estado debajo. El cambio de nombre se aplica al volver a abrir la app.
+
+**Búsqueda automática:** viene desactivada. Al activarla, Sparkle programa la consulta aproximadamente cada 24 horas y conserva la elección entre aperturas. Una actualización encontrada aparece en el menú como **Actualización disponible…** y en Preferencias. La búsqueda automática no abre ventanas ni inicia descargas o instalaciones. Elegir el aviso o Buscar actualizaciones abre la interfaz habitual de Sparkle.
 
 Preferencias sólo se abre al solicitarlo. Mostrar ventana recupera una ventana de vídeo existente. El vídeo utiliza `glimagesink`; conserva el ajuste al girar la fuente, permite redimensionar la ventana manualmente y guarda geometría separada para las orientaciones vertical y horizontal.
 
@@ -41,11 +45,11 @@ Con una configuración pública de canal válida en `updates/UpdateConfig.plist`
 
 El resultado queda en una carpeta aislada de construcción. El ZIP de preparación aún necesita la firma EdDSA y la publicación descritas en [docs/UPDATES.md](docs/UPDATES.md); no es por sí mismo una actualización distribuida. Si falta el canal, la preparación se detiene antes de compilar.
 
-La plantilla `ci/build-macos.yml.in` está fuera de la carpeta de workflows y no se ejecuta en GitHub. Contiene una propuesta de compilación para un repositorio público de distribución y exige una habilitación explícita. La privacidad del repositorio actual continúa vigente.
+La plantilla histórica `ci/build-macos.yml.in` no se ejecuta. Los workflows activos están en la raíz del repositorio compartido, bajo `.github/workflows/airplay-*.yml`; utilizan el canal y la clave de firma existentes. Los trabajos de construcción y verificación no publican la release ni cambian el feed.
 
 ## Compilar e instalar — ruta de mantenimiento
 
-Los comandos de esta sección conservan la ruta de instalación anterior para el responsable del proyecto. **No se entrega esta candidata al usuario mientras las actualizaciones sigan pendientes.**
+Los comandos de esta sección conservan la ruta de instalación anterior para el responsable del proyecto. La instalación inicial ya se completó en el iMac. Para versiones siguientes, el usuario utiliza el actualizador de la app; esta ruta local queda para mantenimiento.
 
 En el iMac del prototipo, el instalador detecta las rutas conocidas de CMake, libplist y las fuentes. Para indicar otras rutas, prepará opcionalmente una configuración local desde la raíz del proyecto:
 
@@ -105,13 +109,13 @@ El instalador ejecuta estos modos sobre el bundle preparado, con un entorno limp
 
 Ambos deben terminar con código `0`. Un fallo impide reemplazar la app y queda en los registros de instalación. El control de selectores Objective-C también forma parte de la compilación de la interfaz y del actualizador mediante `-Werror=objc-method-access`.
 
-**Estado de validación:** el usuario confirmó la instalación y las Preferencias funcionales de 1.3. Las verificaciones de fuentes y empaquetado de esta candidata se ejecutan fuera de macOS; su compilación, los controles nativos y el resultado visual todavía deben comprobarse en el Mac de destino. Las referencias a 1.0–1.2 en `manifests/baselines/` conservan la procedencia de los prototipos anteriores y no sustituyen esa comprobación.
+**Estado de validación:** la instalación y consulta de actualizaciones de 1.3.2 fueron confirmadas por el usuario en Big Sur. Los informes por versión distinguen las comprobaciones nativas de CI de las pruebas físicas con iPhone/Apple TV. Las revisiones 1.0–1.2 en `manifests/baselines/` conservan la procedencia de los prototipos. Una revisión del código de inicio, salida y reconexión no sustituye una prueba real de reinicio o reposo del iMac.
 
 ## Actualizaciones
 
 El receptor funciona sin un canal configurado. En ese caso, Preferencias muestra **«Actualizaciones todavía no configuradas»** y no presenta el estado como si ya se hubiera comprobado una versión remota.
 
-La entrada local para habilitar el canal es `updates/UpdateConfig.plist`, con la URL del feed y la clave pública que se incorporarán al bundle. Ese archivo no se incluye en el repositorio. La inicialización valida la configuración local; la consulta se inicia mediante **Buscar actualizaciones** en Preferencias.
+La entrada local para habilitar el canal es `updates/UpdateConfig.plist`, con la URL del feed y la clave pública que se incorporarán al bundle. La configuración pública autorizada está en `../UpdateConfig.plist`; CI la incorpora a la ruta local antes de construir. La inicialización valida la configuración y sólo arranca el planificador si el usuario había activado la búsqueda automática. **Buscar actualizaciones** continúa disponible de forma manual.
 
 Los pasos para configurar el feed, firmar versiones y preparar una publicación están en [docs/UPDATES.md](docs/UPDATES.md). Los scripts relacionados son `scripts/configure-updates.sh`, `scripts/make-release.sh` y `scripts/update_release.py`.
 

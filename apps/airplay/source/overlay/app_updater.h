@@ -17,12 +17,17 @@ typedef enum AirPlayUpdateState {
     AIRPLAY_UPDATE_UNSUPPORTED
 } AirPlayUpdateState;
 
-/* Reads the bundled public configuration and publishes a state; no network. */
+/* Reads public configuration. Starts scheduled checks only after saved opt-in. */
 void airplay_app_updater_initialize(void);
-/* The only entry point that starts Sparkle or initiates an update check. */
+/* Explicit user action: checks now or brings an existing update into focus. */
 void airplay_app_check_for_updates(void);
 /* Main thread only. Also false before initialize and for an unconfigured feed. */
 bool airplay_app_updater_can_check(void);
+/* Main thread only. Preference reads do not initialize Sparkle or use the network. */
+bool airplay_app_updater_configured(void);
+bool airplay_app_automatic_updates_enabled(void);
+/* Persists opt-in and updates Sparkle's scheduler. False if setup fails. */
+bool airplay_app_set_automatic_updates_enabled(bool enabled);
 
 #ifdef __cplusplus
 }

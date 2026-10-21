@@ -2,6 +2,7 @@
 "%ld%%" = "%ld%%";
 "About AirPlay" = "About AirPlay";
 "AirPlay Preferences" = "AirPlay Preferences";
+"AirPlay checks for updates automatically." = "AirPlay checks for updates automatically.";
 "AirPlay couldn’t prepare its files" = "AirPlay couldn’t prepare its files";
 "AirPlay is incomplete" = "AirPlay is incomplete";
 "AirPlay is up to date." = "AirPlay is up to date.";
@@ -12,6 +13,7 @@
 "Available as: %@" = "Available as: %@";
 "Changes apply the next time you open AirPlay." = "Changes apply the next time you open AirPlay.";
 "Check for Updates…" = "Check for Updates…";
+"Check for updates automatically" = "Check for updates automatically";
 "Check the name" = "Check the name";
 "Checking for updates…" = "Checking for updates…";
 "Close Window" = "Close Window";
@@ -49,6 +51,7 @@
 "Try saving your preferences again." = "Try saving your preferences again.";
 "Undo" = "Undo";
 "Unmute" = "Unmute";
+"Update available…" = "Update available…";
 "Updates are checked only when you ask." = "Updates are checked only when you ask.";
 "Updates are not configured yet." = "Updates are not configured yet.";
 "Use a short name on one line, without a leading hyphen." = "Use a short name on one line, without a leading hyphen.";

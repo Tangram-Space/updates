@@ -19,6 +19,8 @@
 #include "app_controller.h"
 
 static void *AirPlayCanCheckContext = &AirPlayCanCheckContext;
+static NSString *const AutomaticChecksKey = @"AirPlay.AutomaticUpdateChecks";
+static const NSTimeInterval AutomaticCheckInterval = 24.0 * 60.0 * 60.0;
 
 static BOOL true_number(id value)
 {
@@ -46,7 +48,7 @@ static NSString *validated_feed(NSBundle *bundle)
     return [value copy];
 }
 
-@interface AirPlayUpdater : NSObject <SPUUpdaterDelegate> {
+@interface AirPlayUpdater : NSObject <SPUUpdaterDelegate, SPUStandardUserDriverDelegate> {
     NSString *_feed;
     NSString *_availableVersion;
     SPUUpdater *_updater;
@@ -55,6 +57,11 @@ static NSString *validated_feed(NSBundle *bundle)
     BOOL _observing;
 }
 - (BOOL)canCheck;
+- (BOOL)configured;
+- (BOOL)automaticChecksEnabled;
+- (BOOL)setAutomaticChecksEnabled:(BOOL)enabled;
+- (BOOL)startIfNeeded;
+- (void)startScheduledChecksIfEnabled;
 - (void)publishState;
 - (void)check;
 @end
@@ -80,6 +87,19 @@ static NSString *validated_feed(NSBundle *bundle)
 - (BOOL)canCheck
 {
     return _feed != nil && (_updater == nil || _updater.canCheckForUpdates);
+}
+
+- (BOOL)configured
+{
+    return _feed != nil;
+}
+
+- (BOOL)automaticChecksEnabled
+{
+    /* An app-owned preference prevents an old Sparkle default from opting a
+     * previously manual-only installation into background network requests. */
+    return _feed != nil && true_number([[NSUserDefaults standardUserDefaults]
+                                        objectForKey:AutomaticChecksKey]);
 }
 
 - (void)publishState
@@ -108,21 +128,22 @@ static NSString *validated_feed(NSBundle *bundle)
     }
 }
 
-- (void)check
+- (BOOL)startIfNeeded
 {
     if (!_feed) {
         [self setState:AIRPLAY_UPDATE_NOT_CONFIGURED version:nil];
-        return;
+        return NO;
     }
 
     if (!_updater) {
         NSBundle *bundle = [NSBundle mainBundle];
-        _userDriver = [[SPUStandardUserDriver alloc] initWithHostBundle:bundle delegate:nil];
+        _userDriver = [[SPUStandardUserDriver alloc] initWithHostBundle:bundle delegate:self];
         _updater = [[SPUUpdater alloc] initWithHostBundle:bundle applicationBundle:bundle
                                               userDriver:_userDriver delegate:self];
-        /* This version exposes manual checking only. Override any stale
-         * Sparkle preference, and never prompt for automatic checking. */
-        _updater.automaticallyChecksForUpdates = NO;
+        /* Sparkle owns scheduling, last-check persistence, and wake handling.
+         * Opt-in permits feed checks only; installation always needs a user. */
+        _updater.automaticallyChecksForUpdates = [self automaticChecksEnabled];
+        _updater.updateCheckInterval = AutomaticCheckInterval;
         _updater.automaticallyDownloadsUpdates = NO;
         _updater.sendsSystemProfile = NO;
         [_updater addObserver:self forKeyPath:@"canCheckForUpdates" options:0 context:AirPlayCanCheckContext];
@@ -135,9 +156,33 @@ static NSString *validated_feed(NSBundle *bundle)
             _userDriver = nil;
             NSLog(@"AirPlay update startup failed: %@ (%ld)", error.domain, (long)error.code);
             [self setState:AIRPLAY_UPDATE_ERROR version:nil];
-            return;
+            return NO;
         }
     }
+    return YES;
+}
+
+- (void)startScheduledChecksIfEnabled
+{
+    if ([self automaticChecksEnabled]) [self startIfNeeded];
+}
+
+- (BOOL)setAutomaticChecksEnabled:(BOOL)enabled
+{
+    if (!_feed) return NO;
+    /* Start while the previous preference is still in force so a setup error
+     * cannot falsely save an enabled checkbox. The property setter schedules
+     * the new cycle after opt-in; no custom polling timer is needed. */
+    if (enabled && ![self startIfNeeded]) return NO;
+    [[NSUserDefaults standardUserDefaults] setBool:enabled forKey:AutomaticChecksKey];
+    if (_updater) _updater.automaticallyChecksForUpdates = enabled;
+    [self publishState];
+    return YES;
+}
+
+- (void)check
+{
+    if (![self startIfNeeded]) return;
 
     if (!_updater.canCheckForUpdates) return;
     /* A second click can focus Sparkle's existing download/install window. */
@@ -169,9 +214,42 @@ static NSString *validated_feed(NSBundle *bundle)
 {
     (void)updater;
     (void)error;
-    /* A scheduling or information check must not introduce background network
-     * activity into this manual-only UI, even if defaults were changed. */
-    return _feed != nil && updateCheck == SPUUpdateCheckUpdates;
+    /* Also enforce opt-in at request time, including a cycle queued just
+     * before the preference was disabled. Manual checks always remain usable. */
+    return _feed != nil &&
+        (updateCheck == SPUUpdateCheckUpdates ||
+         (updateCheck == SPUUpdateCheckUpdatesInBackground && [self automaticChecksEnabled]));
+}
+
+- (BOOL)supportsGentleScheduledUpdateReminders
+{
+    return YES;
+}
+
+- (BOOL)standardUserDriverShouldHandleShowingScheduledUpdate:(SUAppcastItem *)update
+                                        andInImmediateFocus:(BOOL)immediateFocus
+{
+    (void)update;
+    (void)immediateFocus;
+    /* A background receiver must not raise windows or take focus during a
+     * stream. The menu and Preferences expose the available update instead. */
+    return NO;
+}
+
+- (void)standardUserDriverWillHandleShowingUpdate:(BOOL)handleShowingUpdate
+                                       forUpdate:(SUAppcastItem *)update
+                                           state:(SPUUserUpdateState *)state
+{
+    (void)handleShowingUpdate;
+    (void)state;
+    [self setState:AIRPLAY_UPDATE_AVAILABLE version:update.displayVersionString];
+}
+
+- (void)standardUserDriverWillFinishUpdateSession
+{
+    /* Clear the gentle reminder if the user dismisses/skips the update.
+     * A following failure callback can still publish its precise error state. */
+    if (_state == AIRPLAY_UPDATE_AVAILABLE) [self setState:AIRPLAY_UPDATE_IDLE version:nil];
 }
 
 - (void)updater:(SPUUpdater *)updater didFindValidUpdate:(SUAppcastItem *)item
@@ -234,7 +312,8 @@ static NSString *validated_feed(NSBundle *bundle)
           error:(NSError *)error
 {
     (void)updater;
-    if (updateCheck != SPUUpdateCheckUpdates) return;
+    if (updateCheck != SPUUpdateCheckUpdates &&
+        updateCheck != SPUUpdateCheckUpdatesInBackground) return;
     if (error) {
         [self recordError:error];
     } else if (_state == AIRPLAY_UPDATE_CHECKING) {
@@ -247,8 +326,7 @@ static NSString *validated_feed(NSBundle *bundle)
 }
 @end
 
-/* App-lifetime owner: Sparkle delegates are weak. Every access stays on main,
- * and initialization does not create or start SPUUpdater. */
+/* App-lifetime owner: Sparkle delegates are weak. Every access stays on main. */
 static AirPlayUpdater *airplayUpdater;
 
 void airplay_app_updater_initialize(void)
@@ -257,7 +335,10 @@ void airplay_app_updater_initialize(void)
         dispatch_async(dispatch_get_main_queue(), ^{ airplay_app_updater_initialize(); });
         return;
     }
-    if (!airplayUpdater) airplayUpdater = [[AirPlayUpdater alloc] init];
+    if (!airplayUpdater) {
+        airplayUpdater = [[AirPlayUpdater alloc] init];
+        [airplayUpdater startScheduledChecksIfEnabled];
+    }
     [airplayUpdater publishState];
 }
 
@@ -274,4 +355,25 @@ void airplay_app_check_for_updates(void)
 bool airplay_app_updater_can_check(void)
 {
     return [NSThread isMainThread] && airplayUpdater && [airplayUpdater canCheck];
+}
+
+bool airplay_app_updater_configured(void)
+{
+    return [NSThread isMainThread] && airplayUpdater && [airplayUpdater configured];
+}
+
+bool airplay_app_automatic_updates_enabled(void)
+{
+    if (![NSThread isMainThread]) return false;
+    if (airplayUpdater) return [airplayUpdater automaticChecksEnabled];
+    /* Reading the saved preference must not create Sparkle or start a request. */
+    return validated_feed([NSBundle mainBundle]) != nil &&
+        true_number([[NSUserDefaults standardUserDefaults] objectForKey:AutomaticChecksKey]);
+}
+
+bool airplay_app_set_automatic_updates_enabled(bool enabled)
+{
+    if (![NSThread isMainThread]) return false;
+    if (!airplayUpdater) airplay_app_updater_initialize();
+    return [airplayUpdater setAutomaticChecksEnabled:enabled];
 }

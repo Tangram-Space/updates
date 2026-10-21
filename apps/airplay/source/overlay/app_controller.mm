@@ -218,8 +218,10 @@ static BOOL set_login_enabled(BOOL enabled, NSError **error)
     NSTextField *savedLabel;
     NSStatusItem *statusItem; /* Retained: NSStatusBar does not own its lifetime. */
     NSMenuItem *statusMenuItem; /* Owned by statusMenu. */
+    NSMenuItem *updateAvailableMenuItem; /* Owned by statusMenu. */
     NSButton *loginCheckbox;
     NSButton *updateButton;
+    NSButton *automaticUpdatesCheckbox;
     NSTextField *updateStatusLabel;
     AirPlayUpdateState updateState;
     NSString *availableVersion;
@@ -239,6 +241,7 @@ static BOOL set_login_enabled(BOOL enabled, NSError **error)
 - (void)install;
 - (void)updatePreferencesState;
 - (void)checkForUpdates:(id)sender;
+- (void)toggleAutomaticUpdates:(id)sender;
 - (void)receiveUpdateState:(AirPlayUpdateState)state version:(NSString *)version;
 - (void)statusClicked:(id)sender;
 - (void)makeVolumePopover;
@@ -364,7 +367,7 @@ static BOOL validate_layout(NSView *root, NSArray *identifiers, NSString *sectio
     if ([settingsWindow isVisible] || [volumePopover isShown]) return NO;
     return validate_layout([settingsWindow contentView], @[
         @"name-label",@"name-field",@"save",@"name-message",@"restore",
-        @"login",@"logs",@"version",@"update-status",@"check-updates"], @"preferences") &&
+        @"login",@"logs",@"version",@"update-status",@"check-updates",@"automatic-updates"], @"preferences") &&
         validate_layout([[volumePopover contentViewController] view], @[
             @"volume-title",@"volume-percent",@"volume-slider",@"volume-mute"], @"volume");
 }
@@ -393,6 +396,9 @@ static BOOL validate_layout(NSView *root, NSArray *identifiers, NSString *sectio
     [statusMenu addItem:[NSMenuItem separatorItem]];
     menu_item(statusMenu, L(@"Show Window"), @selector(showReceiver:), @"", self);
     menu_item(statusMenu, L(@"Preferences…"), @selector(showSettings:), @"", self);
+    updateAvailableMenuItem = menu_item(statusMenu, L(@"Update available…"),
+        @selector(checkForUpdates:), @"", self);
+    [updateAvailableMenuItem setHidden:YES];
     [statusMenu addItem:[NSMenuItem separatorItem]];
     menu_item(statusMenu, L(@"Quit AirPlay"), @selector(quit:), @"", self);
     [[statusItem button] setTarget:self];
@@ -448,7 +454,7 @@ static BOOL validate_layout(NSView *root, NSArray *identifiers, NSString *sectio
 {
     if (settingsWindow) return;
     @try {
-        settingsWindow = [[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,440,310)
+        settingsWindow = [[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,440,346)
             styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable
             backing:NSBackingStoreBuffered defer:NO];
         [settingsWindow setReleasedWhenClosed:NO];
@@ -457,7 +463,7 @@ static BOOL validate_layout(NSView *root, NSArray *identifiers, NSString *sectio
         if (!checkingUI) {
             BOOL restored = [settingsWindow setFrameUsingName:@"AirPlay.Settings.Window"];
             [settingsWindow setFrameAutosaveName:@"AirPlay.Settings.Window"];
-            [settingsWindow setContentSize:NSMakeSize(440,310)];
+            [settingsWindow setContentSize:NSMakeSize(440,346)];
             if (!restored) [settingsWindow center];
         }
         NSView *content = [settingsWindow contentView];
@@ -505,11 +511,18 @@ static BOOL validate_layout(NSView *root, NSArray *identifiers, NSString *sectio
         [[updateStatusLabel cell] setWraps:YES];
         [[updateStatusLabel cell] setScrollable:NO];
         updateButton = button(NSZeroRect, L(@"Check for Updates…"), @selector(checkForUpdates:), self);
+        automaticUpdatesCheckbox = [[[NSButton alloc] initWithFrame:NSZeroRect] autorelease];
+        [automaticUpdatesCheckbox setButtonType:NSButtonTypeSwitch];
+        [automaticUpdatesCheckbox setTitle:L(@"Check for updates automatically")];
+        [automaticUpdatesCheckbox setFont:[NSFont systemFontOfSize:13]];
+        [automaticUpdatesCheckbox setTarget:self];
+        [automaticUpdatesCheckbox setAction:@selector(toggleAutomaticUpdates:)];
+        [automaticUpdatesCheckbox setState:NSControlStateValueOff];
     
         NSArray *views = @[nameLabel,nameField,save,savedLabel,restore,firstDivider,
-            loginCheckbox,logs,secondDivider,versionLabel,updateStatusLabel,updateButton];
+            loginCheckbox,logs,secondDivider,versionLabel,updateStatusLabel,updateButton,automaticUpdatesCheckbox];
         NSArray *identifiers = @[@"name-label",@"name-field",@"save",@"name-message",@"restore",@"divider-1",
-            @"login",@"logs",@"divider-2",@"version",@"update-status",@"check-updates"];
+            @"login",@"logs",@"divider-2",@"version",@"update-status",@"check-updates",@"automatic-updates"];
         for (NSUInteger i=0; i<[views count]; ++i) {
             NSView *view = [views objectAtIndex:i];
             [view setIdentifier:[identifiers objectAtIndex:i]];
@@ -557,12 +570,16 @@ static BOOL validate_layout(NSView *root, NSArray *identifiers, NSString *sectio
             [[versionLabel heightAnchor] constraintEqualToConstant:18],
             [[updateStatusLabel leadingAnchor] constraintEqualToAnchor:[nameLabel leadingAnchor]],
             [[updateStatusLabel trailingAnchor] constraintEqualToAnchor:[nameLabel trailingAnchor]],
-            [[updateStatusLabel topAnchor] constraintEqualToAnchor:[versionLabel bottomAnchor] constant:6],
+            [[updateStatusLabel topAnchor] constraintEqualToAnchor:[automaticUpdatesCheckbox bottomAnchor] constant:6],
             [[updateStatusLabel heightAnchor] constraintEqualToConstant:32],
             [[updateButton trailingAnchor] constraintEqualToAnchor:[nameLabel trailingAnchor]],
             [[updateButton centerYAnchor] constraintEqualToAnchor:[versionLabel centerYAnchor]],
             [[updateButton heightAnchor] constraintEqualToConstant:28],
-            [[updateButton widthAnchor] constraintGreaterThanOrEqualToConstant:180]
+            [[updateButton widthAnchor] constraintGreaterThanOrEqualToConstant:180],
+            [[automaticUpdatesCheckbox leadingAnchor] constraintEqualToAnchor:[nameLabel leadingAnchor]],
+            [[automaticUpdatesCheckbox trailingAnchor] constraintEqualToAnchor:[nameLabel trailingAnchor]],
+            [[automaticUpdatesCheckbox topAnchor] constraintEqualToAnchor:[updateButton bottomAnchor] constant:8],
+            [[automaticUpdatesCheckbox heightAnchor] constraintEqualToConstant:22]
         ]];
         [self updatePreferencesState];
     } @catch (NSException *exception) {
@@ -572,6 +589,7 @@ static BOOL validate_layout(NSView *root, NSArray *identifiers, NSString *sectio
         savedLabel = nil;
         loginCheckbox = nil;
         updateButton = nil;
+        automaticUpdatesCheckbox = nil;
         updateStatusLabel = nil;
         @throw exception;
     }
@@ -786,9 +804,15 @@ static BOOL validate_layout(NSView *root, NSArray *identifiers, NSString *sectio
 }
 - (void)updatePreferencesState
 {
+    /* The offline UI check must not read preferences or create the updater. */
+    BOOL automaticEnabled = !checkingUI && airplay_app_automatic_updates_enabled();
+    BOOL canCheck = !checkingUI && airplay_app_updater_can_check();
     NSString *message = L(@"Updates are not configured yet.");
     switch (updateState) {
-        case AIRPLAY_UPDATE_IDLE: message = L(@"Updates are checked only when you ask."); break;
+        case AIRPLAY_UPDATE_IDLE:
+            message = automaticEnabled ? L(@"AirPlay checks for updates automatically.") :
+                L(@"Updates are checked only when you ask.");
+            break;
         case AIRPLAY_UPDATE_CHECKING: message = L(@"Checking for updates…"); break;
         case AIRPLAY_UPDATE_AVAILABLE:
             message = [availableVersion length] ?
@@ -801,7 +825,11 @@ static BOOL validate_layout(NSView *root, NSArray *identifiers, NSString *sectio
         case AIRPLAY_UPDATE_NOT_CONFIGURED: break;
     }
     [updateStatusLabel setStringValue:message];
-    [updateButton setEnabled:!checkingUI && airplay_app_updater_can_check()];
+    [updateButton setEnabled:canCheck];
+    [automaticUpdatesCheckbox setState:automaticEnabled ? NSControlStateValueOn : NSControlStateValueOff];
+    [automaticUpdatesCheckbox setEnabled:!checkingUI && airplay_app_updater_configured()];
+    [updateAvailableMenuItem setHidden:updateState != AIRPLAY_UPDATE_AVAILABLE];
+    [updateAvailableMenuItem setEnabled:canCheck];
 }
 
 - (void)receiveUpdateState:(AirPlayUpdateState)state version:(NSString *)version
@@ -816,6 +844,20 @@ static BOOL validate_layout(NSView *root, NSArray *identifiers, NSString *sectio
 {
     (void)sender;
     if (!checkingUI) airplay_app_check_for_updates();
+}
+
+- (void)toggleAutomaticUpdates:(id)sender
+{
+    (void)sender;
+    if (checkingUI) return;
+    BOOL requested = [automaticUpdatesCheckbox state] == NSControlStateValueOn;
+    if (!airplay_app_set_automatic_updates_enabled(requested)) {
+        /* The updater publishes the error; restore the actual saved selection. */
+        [automaticUpdatesCheckbox setState:airplay_app_automatic_updates_enabled()
+            ? NSControlStateValueOn : NSControlStateValueOff];
+        return;
+    }
+    [self updatePreferencesState];
 }
 
 - (void)showLogs:(id)sender

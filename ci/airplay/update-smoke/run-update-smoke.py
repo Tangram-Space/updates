@@ -117,6 +117,35 @@ def stop_owned(identity, cleanup):
         cleanup.append({'signal': 'KILL', **identity})
 
 
+def request_normal_quit(helper, identity, output, result):
+    require(still_same(identity), 'B changed before the normal-termination request.')
+    with (output / 'real-B-normal-quit.stderr.log').open('xb') as stderr:
+        completed = subprocess.run([str(helper), str(identity['pid']), identity['executable'], identity['birth']],
+                                   stdout=subprocess.PIPE, stderr=stderr, env=child_environment(), timeout=45)
+    require(len(completed.stdout) < 32 * 1024, 'The normal-termination report is unexpectedly large.')
+    (output / 'real-B-normal-quit.json').write_bytes(completed.stdout)
+    report = json.loads(completed.stdout)
+    result['target_B_normal_shutdown'] = report
+    require(isinstance(report, dict) and report.get('status') == 'PASS' and completed.returncode == 0,
+            'Normal termination failed; inspect real-B-normal-quit.json.')
+    require(report.get('pid') == identity['pid'] and report.get('birth') == identity['birth']
+            and report.get('executable') == identity['executable']
+            and report.get('method') == 'NSRunningApplication.terminate'
+            and report.get('exit_observation') == 'kqueue NOTE_EXITSTATUS'
+            and report.get('normal_termination_requested') is True
+            and report.get('normal_termination_accepted') is True
+            and report.get('exit_status_observed') is True and report.get('exited_normally') is True
+            and report.get('exit_code') == 0 and report.get('raw_wait_status') == 0
+            and report.get('signals_sent') is False,
+            'The normal-termination report does not prove the exact B exited normally with status zero.')
+    deadline = time.monotonic() + 5
+    while still_same(identity) and time.monotonic() < deadline:
+        time.sleep(0.1)
+    require(not processes_at(Path(identity['executable'])), 'A process remains at the B fixture path after normal termination.')
+    result['target_B_exit_code'] = report['exit_code']
+    result['target_B_exit_status_observed'] = True
+
+
 def events_from(path):
     events = []
     if path.exists():
@@ -166,7 +195,8 @@ def guard(output):
     require(not output.is_symlink() and output.is_dir(), 'The report directory must exist and not be a symlink.')
     output.resolve(strict=True).relative_to(temporary)
     require(output.resolve() != temporary and temporary != Path.home().resolve(), 'Unexpected report root.')
-    for name in ('smoke-result.json', 'driver-A.jsonl', 'driver-A.stderr.log'):
+    for name in ('smoke-result.json', 'driver-A.jsonl', 'driver-A.stderr.log',
+                 'real-B-normal-quit.json', 'real-B-normal-quit.stderr.log', 'real-B-shutdown.log'):
         require(not (output / name).exists(), 'The report directory was already used.')
     return temporary
 
@@ -208,9 +238,12 @@ def main():
               'public_ed25519_key': PUBLIC_KEY, 'archive_bytes': args.archive_bytes,
               'public_verifier_source_sha256': digest(scripts / 'verify-release.swift'),
               'synthetic_driver_source_sha256': digest(scripts / 'SmokeDriver.m'),
+              'normal_quit_observer_source_sha256': digest(scripts / 'NormalQuit.m'),
               'checks': [], 'installed_to_user_applications': False, 'private_key_used': False,
               'permissions_changed': False, 'big_sur_runtime_tested': False,
-              'actual_airplay_updater_ui_tested': False, 'streaming_tested': False, 'cleanup': []}
+              'actual_airplay_updater_ui_tested': False, 'streaming_tested': False,
+              'target_B_normal_termination_verified': False, 'target_B_exit_status_observed': False,
+              'target_B_preferences_flushed': False, 'cleanup': []}
     started = time.monotonic()
     try:
         for url, destination, expected_hash in ((FEED, feed, args.appcast_sha256),
@@ -240,6 +273,10 @@ def main():
              scripts / 'verify-release.swift', '-o', verifier], output / 'compile-verifier.log')
         run([verifier, manifest, archive, feed], output / 'public-signatures.log')
         result['checks'].append('public-ed25519-archive-and-feed')
+        normal_quit_helper = work / 'normal-quit'
+        run(['/usr/bin/xcrun', 'clang', '-fobjc-arc', '-fblocks', '-Wall', '-Wextra', '-Werror',
+             '-arch', 'x86_64', '-mmacosx-version-min=11.0', scripts / 'NormalQuit.m',
+             '-framework', 'Cocoa', '-lproc', '-o', normal_quit_helper], output / 'compile-normal-quit.log')
         validate_archive(archive)
         reference = work / 'reference.noindex'
         reference.mkdir()
@@ -351,15 +388,35 @@ def main():
                                  'real-B-startup-and-ten-seconds-alive'])
         result['target_B_process'] = target_identity
         result['observer_launched_B'] = False
+        request_normal_quit(normal_quit_helper, target_identity, output, result)
+        require(app_log.is_file() and not app_log.is_symlink() and app_log.stat().st_size < 4 * 1024 * 1024,
+                'The real B shutdown log is missing or unexpectedly large.')
+        shutdown_log = app_log.read_text(encoding='utf-8', errors='replace')
+        require(shutdown_log.startswith(startup_log), 'The B log was replaced during normal termination.')
+        shutdown_tail = shutdown_log[len(startup_log):]
+        require(re.search(r'(?m)^AIRPLAY_APP requested normal receiver shutdown\r?$', shutdown_tail) is not None,
+                'B did not record a normal receiver shutdown request.')
+        require(re.search(r'(?m)^AIRPLAY_UI preferences_flush=1\r?$', shutdown_tail) is not None,
+                'B did not confirm successful preference flushing during normal termination.')
+        require('Stopping RAOP Server...' in shutdown_tail, 'B did not reach the orderly RAOP shutdown path.')
+        shutil.copyfile(app_log, output / 'real-B-shutdown.log')
+        result['target_B_normal_termination_verified'] = True
+        result['target_B_preferences_flushed'] = True
+        result['checks'].extend(['real-B-normal-appkit-termination-request',
+                                 'real-B-kernel-observed-normal-exit-zero',
+                                 'real-B-preferences-flush-and-raop-shutdown'])
         result['status'] = 'PASS'
     except Exception as error:
         result['error'] = str(error)
     finally:
         # Only the exact, newly created fixture path and birth-verified PID are eligible.
         try:
-            for identity in (target_identity, source_identity):
-                if identity is not None:
-                    stop_owned(identity, result['cleanup'])
+            # The successful path has already observed B's normal exit. Signals
+            # are only fallback cleanup after a failure, never evidence of Quit.
+            if result['status'] != 'PASS':
+                for identity in (target_identity, source_identity):
+                    if identity is not None:
+                        stop_owned(identity, result['cleanup'])
             if source is not None and source.poll() is not None:
                 result['source_A_exit_code'] = source.returncode
         except Exception as error:

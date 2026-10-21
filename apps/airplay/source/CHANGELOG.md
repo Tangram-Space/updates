@@ -2,7 +2,16 @@
 
 Las versiones 1.0–1.2 corresponden a prototipos locales. Sus manifiestos están en [manifests/baselines/](manifests/baselines/); no se han reconstruido fechas de publicación ni commits históricos del proyecto a partir de ellos.
 
-## 1.3.2 — build 6 — en preparación, sin release
+## 1.3.3 — build 7
+
+- Añade la preferencia **Buscar actualizaciones automáticamente**, inicialmente desactivada, con selección persistente y traducciones en los diez idiomas existentes.
+- Utiliza el planificador de Sparkle con intervalo de 24 horas. Las descargas automáticas y el envío del perfil del sistema permanecen desactivados.
+- Presenta las versiones detectadas automáticamente en el menú de la barra y en Preferencias, sin abrir ventanas ni tomar el foco. La descarga e instalación se eligen en la interfaz estándar al abrir el aviso.
+- Mantiene los controles manuales y la validación de las firmas del feed y del paquete.
+- Conserva sin cambios el receptor, el audio/RTP, el vídeo, la geometría de la ventana y los controles de volumen.
+- Añade comprobaciones nativas del actualizador real y del cierre normal del receptor. Los informes de CI por versión registran el resultado y su alcance; las pruebas físicas de reposo/conexión siguen siendo distintas.
+
+## 1.3.2 — build 6 — publicada el 18 de octubre de 2026
 
 - Reduce el panel de volumen a 280 × 80 puntos. Dibuja una pista de cápsula de 22 puntos con relleno blanco, conservando el seguimiento, teclado y accesibilidad de NSSlider.
 - Reemplaza el botón grande de silencio por un pequeño parlante en la cabecera, junto al porcentaje. Conserva las acciones y la persistencia del volumen y del silencio.
@@ -10,7 +19,7 @@ Las versiones 1.0–1.2 corresponden a prototipos locales. Sus manifiestos está
 - Prepara la comprobación de disponibilidad e integridad de una publicación comparando sus descargas con los archivos locales ya firmados.
 - Añade una plantilla inactiva para preparar el bundle en un runner Intel de macOS. No habilita Actions ni publica archivos.
 
-La entrega está condicionada a configurar el canal, publicar una actualización firmada y comprobar una transición entre builds en el iMac. El repositorio continúa privado; la propuesta de distribución se describe en [docs/RELEASE_PLAN.md](docs/RELEASE_PLAN.md). Esta entrada no declara una compilación macOS ni una actualización probada.
+La release firmada y sus fuentes se publicaron en `Tangram-Space/updates`. Pasaron la compilación nativa, las comprobaciones AppKit, las firmas, las descargas públicas y la instalación/reapertura de la app real desde una A de prueba en macOS 15.7.9 Intel. El usuario confirmó la instalación inicial en Big Sur el 19 de octubre y mostró la consulta satisfactoria del canal el 21 de octubre. Esto no registra todavía una transición de versiones mediante Sparkle en ese iMac.
 
 ## 1.3.1 — build 5 — candidata local
 

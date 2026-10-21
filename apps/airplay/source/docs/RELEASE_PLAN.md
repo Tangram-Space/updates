@@ -1,4 +1,13 @@
-# Activación del canal de AirPlay
+# Plan histórico de activación del canal de AirPlay
+
+> Este documento conserva la propuesta anterior a la publicación de 1.3.2.
+> El canal ya está activo en `Tangram-Space/updates`, con firma y configuración
+> definitivas. Las rutas propuestas y los estados «pendiente» de abajo no
+> describen la instalación actual. Consultar [UPDATES.md](UPDATES.md) para el
+> funcionamiento vigente y [`../../channel.json`](../../channel.json) para la
+> versión publicada. La consulta desde el iMac fue confirmada el 21 de octubre;
+> la primera actualización completa entre versiones en ese equipo sigue
+> pendiente de confirmación del usuario.
 
 ## Objetivo y estado
 

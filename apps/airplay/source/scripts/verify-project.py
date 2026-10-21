@@ -43,7 +43,7 @@ for name, content in resources.items():
     if not name.endswith('.strings'):
         continue
     current = re.findall(r'^"([^"\n]+)"\s*=', content.decode(), re.M)
-    assert len(current) == len(set(current)) == 59, name
+    assert len(current) == len(set(current)) == 62, name
     if keys is None:
         keys = set(current)
     assert set(current) == keys, name
@@ -63,7 +63,7 @@ with tempfile.TemporaryDirectory(prefix='airplay-source-check-') as temporary:
     assert receiver == resources['receiver.conf']
     plist = plistlib.loads(script.split("<<'AIRPLAY_INFO_PLIST'\n", 1)[1].split('\nAIRPLAY_INFO_PLIST\n', 1)[0].encode())
     assert plist['CFBundleIdentifier'] == 'local.chevy.airplay'
-    assert plist['CFBundleShortVersionString'] == '1.3.2' and plist['CFBundleVersion'] == '6'
+    assert plist['CFBundleShortVersionString'] == '1.3.3' and plist['CFBundleVersion'] == '7'
     assert plist['CFBundleIconFile'] == 'AirPlay.icns'
     assert 'AIRPLAY_ORIGINAL_ICON_SOURCE_1_END' in script
     assert 'AIRPLAY_ORIGINAL_ICON_SOURCE_2_END' in script

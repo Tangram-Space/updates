@@ -1,17 +1,20 @@
 {
   "schema_version": 1,
   "snapshot_kind": "source_files_without_git_history",
-  "version": "1.3.2",
-  "build": "6",
+  "version": "1.3.3",
+  "build": "7",
   "source_directory": "source",
   "source_file_count": 69,
   "source_manifest": "source/manifests/project.sha256",
-  "source_manifest_sha256": "713ed99f4a962e1bf9371c5fe0435d77507bef7b8c51830a7f121fc05bcaa989",
+  "source_manifest_sha256": "2c8ae4525226245435c5e61fc1c2d1776347aa289610a815d74a3a0e847ed60d",
   "upstream_repository": "https://github.com/FDH2/UxPlay.git",
   "upstream_commit": "df67c212a433cf6dda3676dd40c097900d24e645",
   "copied_source_bytes_modified": true,
   "base_source_manifest_sha256": "13ef7dc30e6f395377d9d0511614d41a03866acd87f9ec9ce1667eeb3b2a3450",
   "modifications": [
-    "scripts/bootstrap.command.in isolates pkg-config from upstream Homebrew search paths; project.sha256 regenerated."
+    "scripts/bootstrap.command.in isolates pkg-config from upstream Homebrew search paths; project.sha256 regenerated.",
+    "1.3.3 build 7 adds an app-owned, default-off preference for daily Sparkle checks and gentle menu reminders, with ten localized variants; receiver and media processing preserved.",
+    "Native policy checks cover persisted opt-in/out and silent scheduling; update smoke additionally observes a normal exit and preference flush.",
+    "Current update documentation and source manifests refreshed."
   ]
 }
