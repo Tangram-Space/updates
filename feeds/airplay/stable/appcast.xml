@@ -1,18 +1,29 @@
-<?xml version="1.0" standalone="yes"?><!-- sparkle-sign-warning:
+<?xml version="1.0" standalone="yes"?>
+<!-- sparkle-sign-warning:
 IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
---><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+-->
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>AirPlay</title>
+        <item>
+            <title>1.3.3</title>
+            <pubDate>Wed, 21 Oct 2026 16:43:31 +0000</pubDate>
+            <sparkle:version>7</sparkle:version>
+            <sparkle:shortVersionString>1.3.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>11.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/Tangram-Space/updates/releases/download/airplay-v1.3.3-b7/AirPlay-1.3.3-7.zip" length="3502779" type="application/octet-stream" sparkle:edSignature="6n68VZXOUWAuCZKZYhpNoPFaarCMdff7IelzGJPw4iRXP00zEpOMlJuSBCEbzCMHTe+7wmeqwntm6sVCQhTnBA=="/>
+        </item>
         <item>
             <title>1.3.2</title>
             <pubDate>Sun, 18 Oct 2026 22:27:22 +0000</pubDate>
             <sparkle:version>6</sparkle:version>
             <sparkle:shortVersionString>1.3.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>11.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/Tangram-Space/updates/releases/download/airplay-v1.3.2-b6/AirPlay-1.3.2-6.zip" length="3498880" type="application/octet-stream" sparkle:edSignature="PshSTMGNpRHyfbty+2AOa5QCiloTjwqDJS6ctJ7MFjjfX8kd7GaeOBqFnKynyGj2crxPpPFcXO4gevmExhCkBg=="></enclosure>
+            <enclosure url="https://github.com/Tangram-Space/updates/releases/download/airplay-v1.3.2-b6/AirPlay-1.3.2-6.zip" length="3498880" type="application/octet-stream" sparkle:edSignature="PshSTMGNpRHyfbty+2AOa5QCiloTjwqDJS6ctJ7MFjjfX8kd7GaeOBqFnKynyGj2crxPpPFcXO4gevmExhCkBg=="/>
         </item>
     </channel>
-</rss><!-- sparkle-signatures:
-edSignature: Fxz2RdWVc1Vp0nJycvaPeIgiO5QG7pVdhufKg5uxVC1xuCft5BATorejPcp2o0E6ym3VjiuWh7WLTT5NmTlwCw==
-length: 1056
+</rss>
+<!-- sparkle-signatures:
+edSignature: vV5Fa2BeFvi8aWEi6fALY8wYY3h48eNa4yOPm92+xMMi4RsUi6xo8wjffieu08I77IfpzEGSnqyClx681Vs0Cg==
+length: 1665
 -->

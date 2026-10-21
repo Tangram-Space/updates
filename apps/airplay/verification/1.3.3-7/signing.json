@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "repository": "Tangram-Space/updates",
+  "source_commit": "ac0620635e6574e95a37ebbc78310b76891837e3",
+  "archive_signed_ed25519": true,
+  "appcast_signature_verified": true,
+  "published": false,
+  "big_sur_runtime_tested": false,
+  "release_directory": "release",
+  "release_tag": "airplay-v1.3.3-b7"
+}

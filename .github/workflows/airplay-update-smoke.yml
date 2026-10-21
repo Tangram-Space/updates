@@ -9,12 +9,12 @@ on:
       version:
         description: Published B short version
         required: true
-        default: '1.3.2'
+        default: '1.3.3'
         type: string
       build:
         description: Published B numeric build
         required: true
-        default: '6'
+        default: '7'
         type: string
       archive_sha256:
         description: Reviewed SHA256 of the final published ZIP

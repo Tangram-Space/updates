@@ -12,10 +12,10 @@
   },
   "source": {
     "directory": "source",
-    "version": "1.3.2",
-    "build": "6",
+    "version": "1.3.3",
+    "build": "7",
     "license": "GPL-3.0-or-later",
-    "release_commit": "17489f100018760217a57c959bd3dcb9a39675bb"
+    "release_commit": "ac0620635e6574e95a37ebbc78310b76891837e3"
   },
   "update_channel": {
     "engine": "Sparkle",
@@ -25,33 +25,30 @@
     "feed_url": "https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stable/appcast.xml",
     "public_ed25519_key": "i8eQAeVM6gqQ7M7YeAlnGqSZQ0Wn8321shPPPdafH7A=",
     "latest_release": {
-      "version": "1.3.2",
-      "build": "6",
-      "tag": "airplay-v1.3.2-b6",
-      "url": "https://github.com/Tangram-Space/updates/releases/tag/airplay-v1.3.2-b6",
-      "download_url": "https://github.com/Tangram-Space/updates/releases/download/airplay-v1.3.2-b6/AirPlay-1.3.2-6.zip",
-      "archive_sha256": "493d3e0a62e6c1e7258acf5fae4c89e5552210ef3b4b1d1a65a9c6eb08301c96",
-      "archive_bytes": 3498880,
-      "appcast_sha256": "0b751a82321e7151e00de84abda38048cfe86b0f0d9931f92493f9a2d41eb458",
-      "source_archive": "AirPlay-1.3.2-6-sources.tar.gz",
-      "source_archive_sha256": "4719f91248082a3856de3416694fb9b32c5dbc1cf9320735c3596779332787e1"
+      "version": "1.3.3",
+      "build": "7",
+      "tag": "airplay-v1.3.3-b7",
+      "url": "https://github.com/Tangram-Space/updates/releases/tag/airplay-v1.3.3-b7",
+      "download_url": "https://github.com/Tangram-Space/updates/releases/download/airplay-v1.3.3-b7/AirPlay-1.3.3-7.zip",
+      "archive_sha256": "c5a09bbec8242e086882f0a6ed82fe0eefce03ad0bb1b7019732a4ffc364edda",
+      "archive_bytes": 3502779,
+      "appcast_sha256": "6d9972bd018cd330ba64b8691017659578f1fd1dde1ef22d243776cf95a1bf6b",
+      "source_archive": "AirPlay-1.3.3-7-sources.tar.gz",
+      "source_archive_sha256": "01aaa1eb04679cda85d4c97716725cb48165ace87f3b34f4cf75994e2e2e5d51"
     }
   },
   "verification": {
-    "anonymous_availability_verified": true,
-    "macos_update_test_performed": true,
-    "native_build_run_id": 39171983875,
+    "anonymous_availability_verified": false,
+    "macos_update_test_performed": false,
+    "native_build_run_id": 39636510520,
     "native_build_passed": true,
     "archive_signature_verified": true,
     "appcast_signature_verified": true,
     "big_sur_runtime_tested": false,
-    "availability_run_id": 39174715466,
-    "sparkle_update_run_id": 39174335348,
-    "sparkle_test_macos": "15.7.9",
-    "sparkle_test_architecture": "x86_64",
-    "sparkle_test_uses_synthetic_source_app": true,
-    "actual_airplay_updater_ui_tested": false,
+    "standard_sparkle_ui_with_production_updater_tested": true,
+    "updater_policy_check_passed": true,
+    "updater_policy_test_macos": "15.7.9",
     "streaming_tested_in_ci": false,
-    "reports_directory": "verification/1.3.2-6"
+    "reports_directory": "verification/1.3.3-7"
   }
 }

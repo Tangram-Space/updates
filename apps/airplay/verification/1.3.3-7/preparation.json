@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "status": "AWAITING_RELEASE_SIGNATURE_AND_PUBLICATION",
+  "bundle": "/Users/runner/work/_temp/airplay-ci-wj0fougj/work/airplay-20261021-164205-9189-LDmlNP/bundle.noindex/AirPlay.app",
+  "bundle_id": "local.chevy.airplay",
+  "version": "1.3.3",
+  "build": "7",
+  "minimum_macos": "11.0",
+  "archive": "AirPlay-1.3.3-7.zip",
+  "archive_sha256": "f8639dc5b8ebdc0d9365f51c32580c32848055bc8f728f4ee72a75003bdc9615",
+  "archive_bytes": 3502779,
+  "executable_sha256": "55b8d1443a80e6a480a952978f005d65f1094bc6e346ffae5e8c4b0735f1b64c",
+  "upstream_commit": "df67c212a433cf6dda3676dd40c097900d24e645",
+  "external_gstreamer": "/Library/Frameworks/GStreamer.framework/Versions/1.0",
+  "feed_url": "https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stable/appcast.xml",
+  "public_ed25519_key": "i8eQAeVM6gqQ7M7YeAlnGqSZQ0Wn8321shPPPdafH7A=",
+  "bundle_code_signature": "ad-hoc",
+  "checks": [
+    "bundle-signature",
+    "airplay-check",
+    "airplay-ui-check",
+    "archive-roundtrip"
+  ],
+  "archive_signed_ed25519": false,
+  "feed_access_verified": false,
+  "published": false,
+  "installed": false
+}

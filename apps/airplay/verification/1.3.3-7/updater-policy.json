@@ -1,0 +1,168 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "production_source_sha256": "e2cac25e353c25de1771474b7db5fec2469ef8c73ed55acb2ad7e9c5ad4398b7",
+  "harness_sha256": "f6c3fb47064cea668e3b65a374460cee18ca4088fb2fde6c303d476f937ed946",
+  "feed_url": "https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stable/appcast.xml",
+  "source_bundle_version": "1.3.3",
+  "source_bundle_build": "7",
+  "real_sparkle_version": "2.9.6",
+  "installation_requested": false,
+  "production_bundle_modified": false,
+  "phases": [
+    {
+      "status": "PASS",
+      "phase": "default-opt-in",
+      "schema": 1,
+      "fixture_bundle_identifier": "local.chevy.airplay.updatercheck.193fd7ccae32489cae55b1639a9e4824",
+      "installation_requested": false,
+      "real_sparkle_standard_driver": true,
+      "real_production_updater": true,
+      "legacy_sparkle_default_did_not_enable_scheduling": true,
+      "opt_in_persisted": true,
+      "final_state": 1,
+      "events": [
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 1,
+          "version": ""
+        }
+      ]
+    },
+    {
+      "dismissal_cleared_available_state": true,
+      "schema": 1,
+      "fixture_bundle_identifier": "local.chevy.airplay.updatercheck.193fd7ccae32489cae55b1639a9e4824",
+      "scheduled_signed_update_version": "1.3.2",
+      "phase": "restored-opt-in",
+      "scheduled_update_visible_windows": 0,
+      "real_production_updater": true,
+      "manual_action_showed_standard_alert": true,
+      "installation_requested": false,
+      "real_sparkle_standard_driver": true,
+      "scheduled_update_did_not_activate_app": true,
+      "final_state": 1,
+      "status": "PASS",
+      "events": [
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 3,
+          "version": "1.3.2"
+        },
+        {
+          "state": 3,
+          "version": "1.3.2"
+        },
+        {
+          "state": 3,
+          "version": "1.3.2"
+        },
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 1,
+          "version": ""
+        }
+      ]
+    },
+    {
+      "status": "PASS",
+      "phase": "restored-off",
+      "schema": 1,
+      "fixture_bundle_identifier": "local.chevy.airplay.updatercheck.193fd7ccae32489cae55b1639a9e4824",
+      "installation_requested": false,
+      "real_sparkle_standard_driver": true,
+      "real_production_updater": true,
+      "manual_check_works_after_persisted_opt_out": true,
+      "final_state": 1,
+      "events": [
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 2,
+          "version": ""
+        },
+        {
+          "state": 2,
+          "version": ""
+        },
+        {
+          "state": 2,
+          "version": ""
+        },
+        {
+          "state": 3,
+          "version": "1.3.2"
+        },
+        {
+          "state": 3,
+          "version": "1.3.2"
+        },
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 1,
+          "version": ""
+        },
+        {
+          "state": 1,
+          "version": ""
+        }
+      ]
+    }
+  ],
+  "macos": "15.7.9",
+  "architecture": "x86_64"
+}

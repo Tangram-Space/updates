@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "binary_archive": "AirPlay-1.3.3-7.zip",
+  "binary_sha256": "c5a09bbec8242e086882f0a6ed82fe0eefce03ad0bb1b7019732a4ffc364edda",
+  "release_tag": "airplay-v1.3.3-b7",
+  "updates_commit": "ac0620635e6574e95a37ebbc78310b76891837e3",
+  "git_sources": {
+    "UxPlay": {
+      "repository": "https://github.com/FDH2/UxPlay.git",
+      "commit": "df67c212a433cf6dda3676dd40c097900d24e645"
+    },
+    "Sparkle-2.9.6": {
+      "repository": "https://github.com/sparkle-project/Sparkle.git",
+      "commit": "ac2def288cbff5cfc7df3ffef6abdf45b72bcb0a"
+    },
+    "Cerbero-1.28.8": {
+      "repository": "https://gitlab.freedesktop.org/gstreamer/cerbero.git",
+      "commit": "6fab30afc5d71596a72f878727232da3d4bcf44d"
+    },
+    "updates": {
+      "repository": "https://github.com/Tangram-Space/updates.git",
+      "commit": "ac0620635e6574e95a37ebbc78310b76891837e3"
+    }
+  },
+  "archive_sources": {
+    "libplist-2.8.0.tar.bz2": {
+      "url": "https://github.com/libimobiledevice/libplist/releases/download/2.8.0/libplist-2.8.0.tar.bz2",
+      "sha256": "b1f59f7634c58b2481325a23ff4e3bf51574a42d868cbe466d2b39b04550752a"
+    },
+    "openssl-3.5.0.tar.gz": {
+      "url": "https://github.com/openssl/openssl/releases/download/openssl-3.5.0/openssl-3.5.0.tar.gz",
+      "sha256": "344d0a79f1a9b08029b0744e2cc401a43f9c90acd1044d09a530b4885a8e9fc0"
+    }
+  },
+  "openssl_headers_and_static_library": "3.5.0 (GStreamer SDK 1.28.8)",
+  "source_manifest_matches_build": true,
+  "published": false,
+  "private_signing_key_included": false,
+  "binary_bit_reproducibility_claimed": false,
+  "source_archive": "AirPlay-1.3.3-7-sources.tar.gz",
+  "source_archive_sha256": "01aaa1eb04679cda85d4c97716725cb48165ace87f3b34f4cf75994e2e2e5d51",
+  "source_archive_bytes": 74046285,
+  "source_file_count": 7548
+}

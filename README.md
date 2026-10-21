@@ -1,14 +1,16 @@
 # Tangram Updates
 
-Repositorio público de fuentes y distribución [Tangram-Space/updates](https://github.com/Tangram-Space/updates), compartido por aplicación. AirPlay es la primera incorporación: **1.3.2, build 6**, para macOS 11 o posterior en Intel. La [primera release firmada](https://github.com/Tangram-Space/updates/releases/tag/airplay-v1.3.2-b6) y sus fuentes están publicadas. La [compilación nativa corregida](https://github.com/Tangram-Space/updates/actions/runs/39171983875) pasó las verificaciones del bundle, Preferencias y firmas. La comprobación anónima del canal y la instalación y reapertura reales con Sparkle también pasaron; los [informes de la versión](apps/airplay/verification/1.3.2-6/) conservan la evidencia y el alcance.
+Repositorio público de fuentes y distribución [Tangram-Space/updates](https://github.com/Tangram-Space/updates), compartido por aplicación. AirPlay para macOS 11 o posterior en Intel tiene publicada la **1.3.3, build 7**, con su [paquete firmado y fuentes correspondientes](https://github.com/Tangram-Space/updates/releases/tag/airplay-v1.3.3-b7).
+
+Esta versión añade la búsqueda automática opcional, inicialmente desactivada, y un aviso discreto en el menú. La [compilación nativa 39636510520](https://github.com/Tangram-Space/updates/actions/runs/39636510520) pasó, incluidas las diez variantes de idioma, las firmas y la prueba del actualizador real: persistencia de la preferencia, consulta programada sin ventana ni activación y apertura manual del aviso estándar. Las comprobaciones de disponibilidad y de instalación del paquete publicado se registran por separado en los [informes de la versión](apps/airplay/verification/1.3.3-7/). [Uso y estado de AirPlay](apps/airplay/README.md).
 
 ## Contenido
 
 | Ruta | Función |
 | --- | --- |
-| [apps/airplay/source/](apps/airplay/source/) | Los 69 archivos del proyecto preparado: modificaciones de UxPlay, recursos, construcción, verificadores, manifiestos y licencias. La selección de dependencias se aísla de Homebrew para mantener coherentes las cabeceras y bibliotecas del SDK. |
+| [apps/airplay/source/](apps/airplay/source/) | Modificaciones de UxPlay, recursos, construcción, verificadores, manifiestos y licencias. La selección de dependencias se aísla de Homebrew para mantener coherentes las cabeceras y bibliotecas del SDK. |
 | [apps/airplay/source-snapshot.json](apps/airplay/source-snapshot.json) | Identidad y comprobación del snapshot, sin importar el historial privado de desarrollo. |
-| [ci/airplay/](ci/airplay/) | Dependencias fijadas, configuración pública, firma y recolección acotada de artefactos. |
+| [ci/airplay/](ci/airplay/) | Dependencias fijadas, configuración pública, comprobación nativa del actualizador, firma y recolección acotada de artefactos. |
 | `.github/workflows/airplay-*.yml` | Cuatro workflows **manuales** de AirPlay: configuración pública, compilación firmada, comprobación anónima y prueba real de instalación con Sparkle. No publican Releases ni modifican el feed. |
 | [apps/airplay/channel.json](apps/airplay/channel.json) | Identidad de la release publicada, clave pública y estado comprobado del canal. |
 | [apps/turner/](apps/turner/) | Canal de Turner y solicitud de versión con el commit exacto del repositorio público de fuentes. |
@@ -17,15 +19,29 @@ Repositorio público de fuentes y distribución [Tangram-Space/updates](https://
 
 ## Preparar y publicar AirPlay
 
-1. **Publicar las fuentes revisadas** en `main` del repositorio público `Tangram-Space/updates`. Las plantillas rechazan otro repositorio, una rama distinta o un destino privado. La construcción usa un runner Intel y no modifica la app instalada en ningún Mac personal.
+### Configuración inicial del canal, ya realizada
 
-2. **Preparar la firma una sola vez en el Mac Intel.** Ejecutar [Preparar_Firma_AirPlay.command](ci/airplay/Preparar_Firma_AirPlay.command) con el usuario habitual. Descarga Sparkle 2.9.6 con SHA256 y firmas comprobados; crea o reutiliza la cuenta `local.chevy.airplay` del Llavero y copia su export privado al portapapeles sin mostrarlo. El usuario lo pega personalmente en el Actions Secret `AIRPLAY_SPARKLE_PRIVATE_KEY` de este repositorio y vuelve a Terminal para presionar Enter: se eliminan la copia temporal y el contenido del portapapeles si sigue siendo esa clave. El original permanece en el Llavero. Nunca pegar la privada en el chat, el repositorio o un artefacto. El comando sólo prepara la firma y no instala ni modifica AirPlay. Los helpers de CI no generan ni rotan claves; [su documentación](ci/airplay/README.md) describe la importación temporal y la firma oficial por stdin.
+AirPlay ya tiene una clave de firma y un canal estable. Las siguientes entradas se conservan entre versiones:
 
-3. **Obtener la configuración pública.** Los workflows `airplay-public-key.yml` y `airplay-build.yml` están activados en este repositorio público revisado y la variable `AIRPLAY_PUBLIC_CI_ENABLED` está en `true`. Ejecutar manualmente el workflow de configuración pública. Su artefacto contiene únicamente `UpdateConfig.plist`, derivado de la clave existente. Guardar el XML completo como variable pública `AIRPLAY_UPDATE_CONFIG_PLIST`; no es un secreto.
+| Entrada | Uso |
+| --- | --- |
+| Actions Secret `AIRPLAY_SPARKLE_PRIVATE_KEY` | Clave existente con la que se firman el paquete y el feed. |
+| Variable `AIRPLAY_UPDATE_CONFIG_PLIST` | Configuración pública del mismo feed y clave, derivada de ese Secret. |
+| Variable `AIRPLAY_PUBLIC_CI_ENABLED=true` | Habilita los workflows revisados de AirPlay en este repositorio público. |
 
-4. **Ejecutar manualmente la preparación firmada.** Comprueba que la clave coincide antes de compilar, ejecuta las verificaciones del bundle y de AppKit, y firma y verifica el ZIP y el appcast con Sparkle 2.9.6. El artefacto contiene `release/` con los archivos finales y sus informes. El workflow no crea Releases, no cambia el feed ni instala AirPlay.
+**Publicar una versión nueva no requiere preparar otra clave ni volver a configurar estas entradas.** [Preparar_Firma_AirPlay.command](ci/airplay/Preparar_Firma_AirPlay.command) y el workflow de configuración pública corresponden al alta inicial o a una recuperación revisada que preserve la misma identidad de firma. La clave privada no debe incluirse en el repositorio, el chat ni los artefactos. Los helpers de CI verifican la correspondencia con la configuración pública y no generan ni rotan claves; [su documentación](ci/airplay/README.md) explica el manejo temporal de la firma.
 
-5. **Publicar los archivos finales:** primero `release/AirPlay-1.3.2-6.zip` en la release de tag `airplay-v1.3.2-b6`, junto con las fuentes correspondientes; después, los bytes exactos de `release/appcast.xml` en `feeds/airplay/stable/appcast.xml`. No editar el XML firmado ni sustituir el ZIP por el paquete previo a la firma.
+### Mantenimiento de cada versión
+
+1. **Publicar las fuentes revisadas** en `main`, con la versión, el build creciente y los manifiestos correspondientes. La construcción toma ese commit público en un runner Intel y no modifica la app instalada en ningún Mac personal.
+
+2. **Ejecutar el workflow de preparación firmada** (`airplay-build.yml`) con la configuración existente. Antes de compilar comprueba que el Secret coincide con la clave pública. Después verifica el bundle y AppKit, ejecuta la [comprobación nativa del actualizador](ci/airplay/updater-check/README.md), y firma y verifica el ZIP y el appcast con Sparkle 2.9.6. También valida la firma del feed anterior y que el build avance. El workflow no crea Releases ni cambia el feed.
+
+3. **Revisar los informes y reunir las fuentes correspondientes.** El artefacto aprobado contiene `release/` con el ZIP final, `appcast.xml` y `release.json`. Conservar la identidad del commit, hashes, tamaños y resultados, y preparar las fuentes y licencias que corresponden exactamente a ese paquete.
+
+4. **Publicar los archivos finales.** Usar el tag `airplay-v<VERSION>-b<BUILD>`: primero el ZIP firmado y las fuentes correspondientes; después, los bytes exactos de `release/appcast.xml` en `feeds/airplay/stable/appcast.xml`. No editar el XML firmado ni sustituir el ZIP por el paquete previo a la firma.
+
+5. **Comprobar el canal publicado y conservar la evidencia.** Ejecutar los workflows de disponibilidad anónima y de instalación real con Sparkle contra ese paquete, feed y clave. Registrar los informes por versión y actualizar [channel.json](apps/airplay/channel.json) y la documentación con los resultados reales antes de dar la entrega por comprobada.
 
 La dirección estable del feed es:
 
@@ -33,7 +49,7 @@ La dirección estable del feed es:
 https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stable/appcast.xml
 ```
 
-Antes de entregar la instalación inicial, ejecutar `apps/airplay/source/scripts/verify-published-release.py --release-dir <carpeta-release>` para comprobar descargas anónimas e integridad. El [smoke de Sparkle](ci/airplay/update-smoke/README.md) comprueba la transición desde una aplicación de prueba A a la release B real y su reapertura. La [prueba 39174335348](https://github.com/Tangram-Space/updates/actions/runs/39174335348) pasó en macOS 15.7.9 Intel. A era una aplicación de prueba aislada y B fue el paquete real publicado. La comprobación de streaming, del diálogo estándar del actualizador y de ejecución en el iMac con Big Sur queda fuera de ese ensayo.
+El verificador `apps/airplay/source/scripts/verify-published-release.py --release-dir <carpeta-release>` comprueba descargas anónimas e integridad. El [smoke de Sparkle](ci/airplay/update-smoke/README.md) comprueba la transición desde una aplicación de prueba A a la release B real y su reapertura. La [prueba 39174335348 de 1.3.2](https://github.com/Tangram-Space/updates/actions/runs/39174335348) pasó en macOS 15.7.9 Intel; no acredita por sí sola una versión posterior. La nueva comprobación del actualizador cubre por separado la persistencia del consentimiento, el aviso silencioso y la apertura manual de la interfaz estándar. Ninguno de esos ensayos sustituye la reproducción ni la ejecución en el iMac con Big Sur.
 
 ## Preparar y publicar Turner
 
