@@ -149,7 +149,7 @@ int main(int argc, const char *argv[])
                 int status = (int)event.data;
                 report[@"exit_status_observed"] = @YES;
                 report[@"raw_wait_status"] = @(status);
-                report[@"exited_normally"] = @(WIFEXITED(status));
+                report[@"exited_normally"] = WIFEXITED(status) ? @YES : @NO;
                 if (WIFEXITED(status)) report[@"exit_code"] = @(WEXITSTATUS(status));
                 if (WIFSIGNALED(status)) report[@"termination_signal"] = @(WTERMSIG(status));
                 if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
