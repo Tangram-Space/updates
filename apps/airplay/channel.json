@@ -38,8 +38,8 @@
     }
   },
   "verification": {
-    "anonymous_availability_verified": false,
-    "macos_update_test_performed": false,
+    "anonymous_availability_verified": true,
+    "macos_update_test_performed": true,
     "native_build_run_id": 39636510520,
     "native_build_passed": true,
     "archive_signature_verified": true,
@@ -49,6 +49,14 @@
     "updater_policy_check_passed": true,
     "updater_policy_test_macos": "15.7.9",
     "streaming_tested_in_ci": false,
-    "reports_directory": "verification/1.3.3-7"
+    "reports_directory": "verification/1.3.3-7",
+    "availability_run_id": 39638593652,
+    "sparkle_update_run_id": 39639398879,
+    "sparkle_test_macos": "15.7.9",
+    "sparkle_test_architecture": "x86_64",
+    "sparkle_test_uses_synthetic_source_app": true,
+    "actual_airplay_updater_ui_tested": false,
+    "normal_shutdown_verified": true,
+    "preferences_flush_verified": true
   }
 }

@@ -7,7 +7,7 @@ Receptor de audio y duplicación de pantalla para **macOS 11 o posterior, Intel 
 - [channel.json](channel.json) identifica la **última release publicada** y su feed firmado.
 - [source/version.env](source/version.env) identifica la revisión de fuentes que se está preparando. La publicación del canal se realiza únicamente después de compilar, firmar y comprobar el paquete correspondiente.
 - La release **1.3.2/build 6** activó el canal. El usuario confirmó la instalación inicial en Big Sur y la consulta satisfactoria de actualizaciones desde AirPlay.
-- **1.3.3/build 7 está publicada:** la [preparación nativa 39636510520](https://github.com/Tangram-Space/updates/actions/runs/39636510520) pasó. El canal estable apunta a su [paquete firmado](https://github.com/Tangram-Space/updates/releases/tag/airplay-v1.3.3-b7); las verificaciones posteriores se registran en [channel.json](channel.json).
+- **1.3.3/build 7 está publicada:** la [preparación nativa 39636510520](https://github.com/Tangram-Space/updates/actions/runs/39636510520) pasó. El canal estable apunta a su [paquete firmado](https://github.com/Tangram-Space/updates/releases/tag/airplay-v1.3.3-b7); la [descarga pública](https://github.com/Tangram-Space/updates/actions/runs/39638593652) y la [instalación, reapertura y cierre normal con Sparkle](https://github.com/Tangram-Space/updates/actions/runs/39639398879) también pasaron. [Evidencia y alcance](verification/1.3.3-7/README.md).
 - Los [informes por versión](verification/) distinguen compilación, firmas, disponibilidad pública, pruebas nativas y sus límites. La ejecución en un runner Intel no sustituye la prueba de reposo/reproducción en el iMac.
 
 ## Uso del actualizador

@@ -1,0 +1,151 @@
+{
+  "actual_airplay_updater_ui_tested": false,
+  "appcast_sha256": "6d9972bd018cd330ba64b8691017659578f1fd1dde1ef22d243776cf95a1bf6b",
+  "archive_bytes": 3502779,
+  "archive_sha256": "c5a09bbec8242e086882f0a6ed82fe0eefce03ad0bb1b7019732a4ffc364edda",
+  "big_sur_runtime_tested": false,
+  "build": "7",
+  "checks": [
+    "anonymous-downloads-and-frozen-sha256",
+    "public-ed25519-archive-and-feed",
+    "real-B-bundle-identity-signature-and-sparkle-version",
+    "synthetic-A-main-bundle-built-and-signed",
+    "real-B-runtime-and-offscreen-ui-preflight",
+    "signed-feed-selected-by-sparkle",
+    "sparkle-install-request-and-A-normal-termination",
+    "installed-B-exact-file-tree-and-code-signature",
+    "B-relaunched-by-sparkle-new-pid",
+    "real-B-startup-and-ten-seconds-alive",
+    "real-B-normal-appkit-termination-request",
+    "real-B-kernel-observed-normal-exit-zero",
+    "real-B-preferences-flush-and-raop-shutdown"
+  ],
+  "cleanup": [],
+  "download_url": "https://github.com/Tangram-Space/updates/releases/download/airplay-v1.3.3-b7/AirPlay-1.3.3-7.zip",
+  "driver_events": [
+    {
+      "bundle": "/Users/runner/work/_temp/airplay-self-update-obj2z5rl/fixture.noindex/AirPlay.app",
+      "event": "started",
+      "fixture": "synthetic-A",
+      "host_is_main_bundle": true,
+      "pid": 9031,
+      "source_build": "6",
+      "target_build": "7",
+      "time": 1792602072.112842
+    },
+    {
+      "event": "checking",
+      "pid": 9031,
+      "time": 1792602072.214086
+    },
+    {
+      "event": "user_initiated_check",
+      "pid": 9031,
+      "time": 1792602072.217567
+    },
+    {
+      "build": "7",
+      "event": "update_found",
+      "pid": 9031,
+      "signed_feed_validated": true,
+      "stage": 0,
+      "time": 1792602072.398981,
+      "url": "https://github.com/Tangram-Space/updates/releases/download/airplay-v1.3.3-b7/AirPlay-1.3.3-7.zip"
+    },
+    {
+      "event": "download_started",
+      "pid": 9031,
+      "time": 1792602072.399312
+    },
+    {
+      "bytes": 3502779,
+      "event": "download_length",
+      "pid": 9031,
+      "time": 1792602072.678982
+    },
+    {
+      "event": "extracting",
+      "pid": 9031,
+      "received_bytes": 3502779,
+      "time": 1792602072.713892
+    },
+    {
+      "event": "install_requested",
+      "pid": 9031,
+      "relaunch": true,
+      "time": 1792602075.622239
+    },
+    {
+      "application_terminated": false,
+      "event": "installing",
+      "pid": 9031,
+      "time": 1792602075.625036
+    },
+    {
+      "event": "application_should_terminate",
+      "install_requested": true,
+      "pid": 9031,
+      "time": 1792602075.629422
+    },
+    {
+      "event": "application_will_terminate",
+      "install_requested": true,
+      "pid": 9031,
+      "time": 1792602075.630986
+    }
+  ],
+  "elapsed_seconds": 51.12,
+  "feed_url": "https://raw.githubusercontent.com/Tangram-Space/updates/main/feeds/airplay/stable/appcast.xml",
+  "installed_to_user_applications": false,
+  "normal_quit_observer_source_sha256": "e8f4049a39f1192eacf3221cace3c395757ef3f91f36ccb94c12d0449cab8070",
+  "observer_launched_B": false,
+  "permissions_changed": false,
+  "private_key_used": false,
+  "public_ed25519_key": "i8eQAeVM6gqQ7M7YeAlnGqSZQ0Wn8321shPPPdafH7A=",
+  "public_verifier_source_sha256": "839db47a9bea847c32f0b5513dfb70e8c3bf1c9724086e9c411f2995fd124a98",
+  "real_B": true,
+  "repository": "Tangram-Space/updates",
+  "runner_arch": "x86_64",
+  "runner_macos": "15.7.9",
+  "schema": 1,
+  "source_A_executable_sha256": "d4742b0fa65209928d36742ba8b32ed485b4d4154bd830213076c6ad7b6d429f",
+  "source_A_exit_code": 0,
+  "source_A_process": {
+    "birth": "Wed Oct 21 17:01:11 2026",
+    "executable": "/Users/runner/work/_temp/airplay-self-update-obj2z5rl/fixture.noindex/AirPlay.app/Contents/MacOS/uxplay",
+    "pid": 9031
+  },
+  "status": "PASS",
+  "streaming_tested": false,
+  "synthetic_A": true,
+  "synthetic_driver_source_sha256": "6b5afa62ca2ae8e4c871d3e397ec061c92f6fd603e12450583eb5f2da377e158",
+  "target_B_exit_code": 0,
+  "target_B_exit_status_observed": true,
+  "target_B_normal_shutdown": {
+    "birth": "Wed Oct 21 17:01:15 2026",
+    "elapsed_seconds": 1.1544739999999933,
+    "executable": "/Users/runner/work/_temp/airplay-self-update-obj2z5rl/fixture.noindex/AirPlay.app/Contents/MacOS/uxplay",
+    "exit_code": 0,
+    "exit_observation": "kqueue NOTE_EXITSTATUS",
+    "exit_status_observed": true,
+    "exited_normally": true,
+    "method": "NSRunningApplication.terminate",
+    "normal_termination_accepted": true,
+    "normal_termination_requested": true,
+    "pid": 9065,
+    "raw_wait_status": 0,
+    "schema": 1,
+    "signals_sent": false,
+    "status": "PASS"
+  },
+  "target_B_normal_termination_verified": true,
+  "target_B_preferences_flushed": true,
+  "target_B_process": {
+    "birth": "Wed Oct 21 17:01:15 2026",
+    "executable": "/Users/runner/work/_temp/airplay-self-update-obj2z5rl/fixture.noindex/AirPlay.app/Contents/MacOS/uxplay",
+    "pid": 9065
+  },
+  "target_executable_sha256": "55b8d1443a80e6a480a952978f005d65f1094bc6e346ffae5e8c4b0735f1b64c",
+  "version": "1.3.3",
+  "workflow_source_commit": "346ddc15a0503dda526afca04768d9f0b1070a2c"
+}

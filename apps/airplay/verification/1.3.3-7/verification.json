@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "version": "1.3.3",
+  "build": "7",
+  "result": "PASS",
+  "release_source_commit": "ac0620635e6574e95a37ebbc78310b76891837e3",
+  "native_build_run": "https://github.com/Tangram-Space/updates/actions/runs/39636510520",
+  "availability_run": "https://github.com/Tangram-Space/updates/actions/runs/39638593652",
+  "sparkle_update_run": "https://github.com/Tangram-Space/updates/actions/runs/39639398879",
+  "sparkle_test_source_commit": "346ddc15a0503dda526afca04768d9f0b1070a2c",
+  "archive_sha256": "c5a09bbec8242e086882f0a6ed82fe0eefce03ad0bb1b7019732a4ffc364edda",
+  "appcast_sha256": "6d9972bd018cd330ba64b8691017659578f1fd1dde1ef22d243776cf95a1bf6b",
+  "reports": [
+    {
+      "path": "preparation.json",
+      "sha256": "4bfa39d2a5566f42026f4ebc27f0dd031d02648ef5c0b3c11116d87cc1d8c0df"
+    },
+    {
+      "path": "signing.json",
+      "sha256": "243915fae88758a05a7f42f35a918b68c1e621e4c9872d9d0dbbca5c2aa15cbd"
+    },
+    {
+      "path": "sources.json",
+      "sha256": "d29db30624bf1d3e04fd6fe76f854955a1d2f7a124282ef9b8618be650dc6ed1"
+    },
+    {
+      "path": "updater-policy.json",
+      "sha256": "e50b5c1af4aadfe8f19e47f4fdbb38b0f7a3f0333660c6000bb18c32f36dbd04"
+    },
+    {
+      "path": "availability.json",
+      "sha256": "e6abee00f75f1d641541da80b046f97801e3527fa387cee9df79250030e664fe"
+    },
+    {
+      "path": "sparkle-update-smoke.json",
+      "sha256": "4d2a28003ee8d79a0cf8918d56a9e0ba172f5e5e930317898fc36f56307dc5fd"
+    },
+    {
+      "path": "normal-quit.json",
+      "sha256": "160c52dfa9c448e585f3e02274421d5bb4f2c17e00819af65bb7b8535d7ad9a5"
+    }
+  ],
+  "scope": "Native build and ten locale layouts, signed ZIP/feed, real production updater and standard Sparkle driver in an isolated policy app, anonymous public availability, and actual Sparkle installation/relaunch/normal shutdown of the published B from synthetic A on macOS 15.7.9 Intel.",
+  "limits": [
+    "No audio/video streaming or physical Big Sur iMac run was performed in CI.",
+    "The installation source A is a synthetic test app; the real standard updater UI/policy is exercised in a separate isolated harness.",
+    "The user still needs to confirm the 1.3.2-to-1.3.3 update, login, sleep and reconnection behavior on the actual iMac."
+  ],
+  "earlier_attempt": {
+    "run_id": 39638314465,
+    "result": "FAIL",
+    "cause": "Test observer boxed WIFEXITED as JSON integer 1 instead of true; actual B exit was normal with status 0.",
+    "correction_commit": "346ddc15a0503dda526afca04768d9f0b1070a2c",
+    "production_release_changed": false
+  }
+}
