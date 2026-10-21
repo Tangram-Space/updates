@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "app_id": "turner",
+  "channel": "stable",
+  "version": "0.1.13",
+  "revision": 4,
+  "tag": "turner-v0.1.13-r4",
+  "platform": "macos",
+  "arch": "x86_64",
+  "minimum_macos": "11.0",
+  "bundle_id": "com.tuner.guitar.compact",
+  "executable": "guitar-tuner-egui",
+  "asset": "Turner-v0.1.13-r4-macos-x86_64.app.zip",
+  "url": "https://github.com/Tangram-Space/updates/releases/download/turner-v0.1.13-r4/Turner-v0.1.13-r4-macos-x86_64.app.zip",
+  "sha256": "678c1d38fbda629e585bc5a275801793b94cc3a04d4b565b5af48c63bf04efd1"
+}
