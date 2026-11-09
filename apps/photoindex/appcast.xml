@@ -1,6 +1,37 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?><!-- sparkle-sign-warning:
 IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
---><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0"><channel><title>PhotoIndex</title><item><title>PhotoIndex 0.46</title><sparkle:version>46</sparkle:version><sparkle:shortVersionString>0.46</sparkle:shortVersionString><enclosure url="https://api.github.com/repos/Tangram-Space/PhotoIndex/releases/assets/726136665" length="4380349" type="application/octet-stream" sparkle:edSignature="T+Zrpo4lT1sNbDCZSD1LNMJomY8qvS9pxv7nbrPmBAJ5Slgyz8fQtj2K0eg5n3pU5a+zKSSRl/jCPZYNt+0KCw=="></enclosure></item><item><title>PhotoIndex 0.45</title><sparkle:version>45</sparkle:version><sparkle:shortVersionString>0.45</sparkle:shortVersionString><enclosure url="https://api.github.com/repos/Tangram-Space/PhotoIndex/releases/assets/726106196" length="4380172" type="application/octet-stream" sparkle:edSignature="IyY0i8rfaBSHWyGtJ+qUx/c1HkwUv7w9XgMyCSTDr6SYwWu29SIKmPSTEbqlcoO47lX5X8mtcGRYxs5YaBrTCg=="></enclosure></item><item><title>PhotoIndex 0.44</title><sparkle:version>44</sparkle:version><sparkle:shortVersionString>0.44</sparkle:shortVersionString><enclosure url="https://api.github.com/repos/Tangram-Space/PhotoIndex/releases/assets/726010130" length="4274199" type="application/octet-stream" sparkle:edSignature="mZv3Xgxt1fiDzCoJSJOnFfLILscMcfFrok65mxQm7M/ecjv2nXITIM9D45AZgadXGuNdXvmZoO8cpL0aslVFAQ=="></enclosure></item></channel></rss><!-- sparkle-signatures:
-edSignature: eaAzoR1WqL/dQWrBUYR0ZQcKOCt9MssE3qRb/tg2aq7mG/UfsLiNKSqYoaDSKoE3buOBMN4AbTsY6KbNUC6uAA==
-length: 1658
+--><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>PhotoIndex</title>
+        <item>
+            <title>0.47</title>
+            <pubDate>Mon, 09 Nov 2026 01:10:49 -0300</pubDate>
+            <sparkle:version>47</sparkle:version>
+            <sparkle:shortVersionString>0.47</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://api.github.com/repos/Tangram-Space/PhotoIndex/releases/assets/726178703" length="4380383" type="application/octet-stream" sparkle:edSignature="9mgjfyuRVT+sgK1tO8a1MUF0rdPaVMrwZuoczRNmcKKH2As72vXiKZsHHKqv/4pdlps/Cb6bKoQtAA+1q5sIBA=="></enclosure>
+        </item>
+        <item>
+            <title>PhotoIndex 0.46</title>
+            <sparkle:version>46</sparkle:version>
+            <sparkle:shortVersionString>0.46</sparkle:shortVersionString>
+            <enclosure url="https://api.github.com/repos/Tangram-Space/PhotoIndex/releases/assets/726136665" length="4380349" type="application/octet-stream" sparkle:edSignature="T+Zrpo4lT1sNbDCZSD1LNMJomY8qvS9pxv7nbrPmBAJ5Slgyz8fQtj2K0eg5n3pU5a+zKSSRl/jCPZYNt+0KCw=="></enclosure>
+        </item>
+        <item>
+            <title>PhotoIndex 0.45</title>
+            <sparkle:version>45</sparkle:version>
+            <sparkle:shortVersionString>0.45</sparkle:shortVersionString>
+            <enclosure url="https://api.github.com/repos/Tangram-Space/PhotoIndex/releases/assets/726106196" length="4380172" type="application/octet-stream" sparkle:edSignature="IyY0i8rfaBSHWyGtJ+qUx/c1HkwUv7w9XgMyCSTDr6SYwWu29SIKmPSTEbqlcoO47lX5X8mtcGRYxs5YaBrTCg=="></enclosure>
+        </item>
+        <item>
+            <title>PhotoIndex 0.44</title>
+            <sparkle:version>44</sparkle:version>
+            <sparkle:shortVersionString>0.44</sparkle:shortVersionString>
+            <enclosure url="https://api.github.com/repos/Tangram-Space/PhotoIndex/releases/assets/726010130" length="4274199" type="application/octet-stream" sparkle:edSignature="mZv3Xgxt1fiDzCoJSJOnFfLILscMcfFrok65mxQm7M/ecjv2nXITIM9D45AZgadXGuNdXvmZoO8cpL0aslVFAQ=="></enclosure>
+        </item>
+    </channel>
+</rss><!-- sparkle-signatures:
+edSignature: vk7NWeuIEolRrWdf+r8pH0bw+s3Sk+wqSIkKKv3dkgsWuEmu+Gq3LSSb6/WPcjngisqyVunMt7h7qNju6r3fCQ==
+length: 2577
 -->
