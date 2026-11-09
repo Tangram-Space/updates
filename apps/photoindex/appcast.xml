@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><!-- sparkle-sign-warning:
+IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
+--><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0"><channel><title>PhotoIndex</title><item><title>PhotoIndex 0.44</title><sparkle:version>44</sparkle:version><sparkle:shortVersionString>0.44</sparkle:shortVersionString><enclosure url="https://api.github.com/repos/Tangram-Space/PhotoIndex/releases/assets/726010130" length="4274199" type="application/octet-stream" sparkle:edSignature="mZv3Xgxt1fiDzCoJSJOnFfLILscMcfFrok65mxQm7M/ecjv2nXITIM9D45AZgadXGuNdXvmZoO8cpL0aslVFAQ=="></enclosure></item></channel></rss><!-- sparkle-signatures:
+edSignature: c93NDMaYhlfPKoR+xHepPf6SFP8IfAu0a8YL0fSOfeQ/FT8MniIgLfzuopLqXKdlHnwoKfRqDhzb7Lx9mhqGBg==
+length: 838
+-->
