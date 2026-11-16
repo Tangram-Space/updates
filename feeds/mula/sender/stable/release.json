@@ -1,13 +1,13 @@
 {
   "app_id": "mula",
   "arch": "arm64",
-  "asset": "Mula-sender-v0.2.0-r10-macos-arm64.app.zip",
+  "asset": "Mula-sender-v0.2.0-r11-macos-arm64.app.zip",
   "bundle_id": "space.tangram.mula.sender",
   "channel": "stable",
   "platform": "macos",
-  "revision": 10,
-  "sha256": "4632146a3d2f388b2eecc192928e5d25456d91c01fe6c660037574eb8f8f26b6",
-  "tag": "mula-sender-v0.2.0-r10",
-  "url": "https://github.com/Tangram-Space/updates/releases/download/mula-sender-v0.2.0-r10/Mula-sender-v0.2.0-r10-macos-arm64.app.zip",
+  "revision": 11,
+  "sha256": "d6a6505b93c335279111319e2bb963c8fe22ca7bcfa9310ea4e3134a01032978",
+  "tag": "mula-sender-v0.2.0-r11",
+  "url": "https://github.com/Tangram-Space/updates/releases/download/mula-sender-v0.2.0-r11/Mula-sender-v0.2.0-r11-macos-arm64.app.zip",
   "version": "0.2.0"
 }
