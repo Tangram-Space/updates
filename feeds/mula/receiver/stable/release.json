@@ -1,13 +1,13 @@
 {
   "app_id": "mula",
   "arch": "x86_64",
-  "asset": "Mula-receiver-v0.2.0-r12-macos-x86_64.app.zip",
+  "asset": "Mula-receiver-v0.2.0-r13-macos-x86_64.app.zip",
   "bundle_id": "space.tangram.mula.receiver",
   "channel": "stable",
   "platform": "macos",
-  "revision": 12,
-  "sha256": "64ea7e48259c49a12be2bd18388a53a7507b0816ed565d595e3692cf5bb21af9",
-  "tag": "mula-receiver-v0.2.0-r12",
-  "url": "https://github.com/Tangram-Space/updates/releases/download/mula-receiver-v0.2.0-r12/Mula-receiver-v0.2.0-r12-macos-x86_64.app.zip",
+  "revision": 13,
+  "sha256": "57880ce49d262eb61cd459f867eb146d84a68f3690b933c6eb3d1f7b414dffb2",
+  "tag": "mula-receiver-v0.2.0-r13",
+  "url": "https://github.com/Tangram-Space/updates/releases/download/mula-receiver-v0.2.0-r13/Mula-receiver-v0.2.0-r13-macos-x86_64.app.zip",
   "version": "0.2.0"
 }
