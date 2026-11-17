@@ -12,6 +12,7 @@
 *.app/
 *.dSYM/
 *.zip
+!apps/media-atlas/*.zip
 *.tar
 *.tar.gz
 *.tar.xz
