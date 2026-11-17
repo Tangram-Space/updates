@@ -5,15 +5,15 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
         <title>Media Atlas</title>
         <item>
             <title>1.0.0</title>
-            <pubDate>Tue, 17 Nov 2026 09:46:44 -0300</pubDate>
-            <sparkle:version>8</sparkle:version>
+            <pubDate>Tue, 17 Nov 2026 12:37:39 -0300</pubDate>
+            <sparkle:version>9</sparkle:version>
             <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://raw.githubusercontent.com/Tangram-Space/updates/main/apps/media-atlas/Media-Atlas-1.0.0-8.zip" length="5612961" type="application/octet-stream" sparkle:edSignature="AYUa2YqAIr7hZprRwKB9OantPAUtZ7KyWlG4LsIh7gdsOA/wks83xMLmPtrdeEf6GaxadlJwKr0A96kMGt9QCg=="></enclosure>
+            <enclosure url="https://raw.githubusercontent.com/Tangram-Space/updates/main/apps/media-atlas/Media-Atlas-1.0.0-9.zip" length="5663634" type="application/octet-stream" sparkle:edSignature="rtd7/Jj3IbNSJip24TpFO8rDMTkKHjbaW8YIYFKSkCKO4J1tMgBmaJhdi91LwlcMALVxw6YlvtM9ihNvJV3RBA=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: /RpFliUhZgXZEoS5k7QfynFhEPXjsB+PgggkJgwdXLhOszcUIz3KxZ2gMik5bvxf7G7znqTXILcyt0sAVcoVDA==
+edSignature: s7KYq9K94uPu/LJ3m0Pk4ra/FyfEM+sUDiDQ3eq76XdcwzJ0DtR+QjIFtcTIKU0y5QBOz5638NhfjqG0PmVIBQ==
 length: 1144
 -->
