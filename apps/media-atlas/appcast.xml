@@ -1,19 +1,22 @@
-<?xml version="1.0" standalone="yes"?><!-- sparkle-sign-warning:
+<?xml version="1.0" standalone="yes"?>
+<!-- sparkle-sign-warning:
 IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
---><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+-->
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>Media Atlas</title>
         <item>
             <title>1.0.0</title>
-            <pubDate>Tue, 17 Nov 2026 12:46:26 -0300</pubDate>
-            <sparkle:version>11</sparkle:version>
+            <pubDate>Fri, 20 Nov 2026 12:34:44 -0300</pubDate>
+            <sparkle:version>12</sparkle:version>
             <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://raw.githubusercontent.com/Tangram-Space/updates/main/apps/media-atlas/Media-Atlas-1.0.0-11.zip" length="5669571" type="application/octet-stream" sparkle:edSignature="Nx2pnMM371/mSsEPxr+q5ym9NyZ1iv4spnQvVKDniwMO0S2iwBCPglk5mHCrAVYF6hTH45VkHsatWzWdD51bAQ=="></enclosure>
+            <enclosure url="https://github.com/Tangram-Space/updates/releases/download/media-atlas-v1.0.0-12/Media-Atlas-1.0.0-12.zip" length="140710275" type="application/octet-stream" sparkle:edSignature="BUhnPBYWC0eL5HXtmd2A1vGbGc9HHYDJtO92bALI2cC3aO1so+8J3uxnC+L4lVOr5I3iDRhQWeWU0SQZd9xtCw=="/>
         </item>
     </channel>
-</rss><!-- sparkle-signatures:
-edSignature: TX0RwGlYf6SLa8o36zgav2MVIiLtlwJ2AfNu/yjRgxPK1pqJdWt9aWkQC1YwWc/7L5IZBTJc8u400dRSVsMuCg==
-length: 1146
+</rss>
+<!-- sparkle-signatures:
+edSignature: IBSILcy3gvlCHloSI4QJxNjpK5KgaZz1XDRsrUq1hvL8WOtHqaWAYh4nnldBMhuI/uFmZP4otPORYIuI+LlrBA==
+length: 1143
 -->
